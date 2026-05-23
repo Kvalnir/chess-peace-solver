@@ -48,6 +48,7 @@ export default function App() {
   // ── Worker ───────────────────────────────────────────────────────────
   const workerRef    = useRef(null);
   const requestIdRef = useRef(0);
+  const solveStartRef = useRef(0);
 
   useEffect(() => {
     workerRef.current = new Worker(
@@ -55,6 +56,7 @@ export default function App() {
       { type: "module" }
     );
     workerRef.current.onmessage = ({ data }) => {
+      const elapsed = Math.round(performance.now() - solveStartRef.current);
       const { solution: sol, error } = data;
       setSolving(false);
       if (error) {
@@ -64,10 +66,10 @@ export default function App() {
       }
       if (sol) {
         setSolution(sol);
-        setResultMsg({ kind: "success", text: "Solution found ✓" });
+        setResultMsg({ kind: "success", text: `Solution found ✓  —  Solved in ${elapsed} ms.` });
       } else {
         setSolution(null);
-        setResultMsg({ kind: "failure", text: "No valid solution exists." });
+        setResultMsg({ kind: "failure", text: `No valid solution exists.  —  Solved in ${elapsed} ms.` });
       }
     };
     return () => workerRef.current?.terminate();
@@ -192,6 +194,7 @@ export default function App() {
     setSolving(true);
     setSolution(null);
     setResultMsg(null);
+    solveStartRef.current = performance.now();
     workerRef.current?.postMessage({ boardConfig, pieces, requestId: ++requestIdRef.current });
   }, [buildPuzzle]);
 
