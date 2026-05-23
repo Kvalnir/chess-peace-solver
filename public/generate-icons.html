@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--
+  ♟ Chess Peace Solver — Icon Generator
+  ══════════════════════════════════════
+  Open this file in any browser.
+  Click the three "Download" buttons.
+  Upload the three saved PNGs into your repo under public/icons/
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Icon Generator — Chess Peace Solver</title>
+    <style>
+      body {
+        font-family: monospace;
+        background: #080c10;
+        color: #e6edf3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+        padding: 48px 24px;
+        min-height: 100vh;
+        margin: 0;
+      }
+      h1 { color: #2dd4bf; font-size: 1.2rem; margin: 0; }
+      p  { color: #7d8590; font-size: 0.85rem; margin: 0; text-align: center; max-width: 400px; }
+      .card {
+        background: #0d1117;
+        border: 1px solid #21262d;
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        width: 260px;
+      }
+      canvas { border-radius: 22%; border: 1px solid #30363d; }
+      button {
+        background: #2dd4bf;
+        color: #080c10;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 0.9rem;
+        cursor: pointer;
+        width: 100%;
+      }
+      button:hover { background: #5eead4; }
+      label { color: #7d8590; font-size: 0.75rem; }
+    </style>
+  </head>
+  <body>
+    <h1>♟ Chess Peace Solver — Icon Generator</h1>
+    <p>Click each Download button, then upload the saved files into <code>public/icons/</code> in your GitHub repo.</p>
+
+    <div class="card">
+      <label>icon-192.png (PWA Standard)</label>
+      <canvas id="c192" width="192" height="192"></canvas>
+      <button onclick="dl('c192','icon-192.png')">⬇ Download icon-192.png</button>
+    </div>
+
+    <div class="card">
+      <label>icon-512.png (PWA Large / Maskable)</label>
+      <canvas id="c512" width="512" height="512"></canvas>
+      <button onclick="dl('c512','icon-512.png')">⬇ Download icon-512.png</button>
+    </div>
+
+    <div class="card">
+      <label>apple-touch-icon.png (iOS Home Screen)</label>
+      <canvas id="c180" width="180" height="180"></canvas>
+      <button onclick="dl('c180','apple-touch-icon.png')">⬇ Download apple-touch-icon.png</button>
+    </div>
+
+    <script>
+      function drawIcon(canvas) {
+        const s = canvas.width;
+        const ctx = canvas.getContext('2d');
+
+        // Background — deep obsidian with subtle radial glow
+        ctx.fillStyle = '#080c10';
+        ctx.fillRect(0, 0, s, s);
+
+        const grad = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s * 0.65);
+        grad.addColorStop(0,   'rgba(45,212,191,0.18)');
+        grad.addColorStop(0.5, 'rgba(45,212,191,0.06)');
+        grad.addColorStop(1,   'rgba(45,212,191,0.00)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, s, s);
+
+        // Outer ring
+        ctx.strokeStyle = '#2dd4bf';
+        ctx.lineWidth = s * 0.025;
+        ctx.beginPath();
+        ctx.arc(s/2, s/2, s * 0.43, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner subtle ring
+        ctx.strokeStyle = 'rgba(45,212,191,0.3)';
+        ctx.lineWidth = s * 0.012;
+        ctx.beginPath();
+        ctx.arc(s/2, s/2, s * 0.36, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Chess knight glyph ♞
+        ctx.fillStyle = '#2dd4bf';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `${s * 0.44}px serif`;
+        // Slight vertical offset to optically centre the piece
+        ctx.fillText('♞', s / 2, s / 2 + s * 0.03);
+
+        // Faint grid in background (decorative)
+        ctx.strokeStyle = 'rgba(45,212,191,0.06)';
+        ctx.lineWidth = s * 0.005;
+        const cell = s / 8;
+        for (let i = 1; i < 8; i++) {
+          ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, s); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(s, i * cell); ctx.stroke();
+        }
+      }
+
+      function dl(id, filename) {
+        const canvas = document.getElementById(id);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+
+      // Draw all three
+      ['c192', 'c512', 'c180'].forEach(id => drawIcon(document.getElementById(id)));
+    </script>
+  </body>
+</html>

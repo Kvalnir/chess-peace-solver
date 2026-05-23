@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover lets content sit under iPhone notch/Dynamic Island -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <!-- ── Standard PWA ─────────────────────────────────────────────── -->
+    <meta name="theme-color" content="#080c10" />
+    <link rel="manifest" href="/chess-peace-solver/manifest.webmanifest" />
+
+    <!-- ── iOS-specific (Safari ignores the manifest for these) ─────── -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="ChessPeace" />
+    <link
+      rel="apple-touch-icon"
+      href="/chess-peace-solver/icons/apple-touch-icon.png"
+    />
+
+    <!-- ── Misc ─────────────────────────────────────────────────────── -->
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" type="image/svg+xml" href="/chess-peace-solver/icons/icon.svg" />
+
+    <!-- ── Typography: JetBrains Mono (technical labels) +
+             Crimson Pro (elegant chess-bookish title) ──────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>Chess Peace Solver</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
