@@ -627,3 +627,70 @@ body {
   .board-wrap { padding-top: 10px; padding-bottom: 8px; }
   .controls-panel { gap: 8px; }
 }
+
+/* ============================================================
+   ADDITIONS: Black piece colour system + rect board size UI
+   ============================================================ */
+
+/* ── Violet colour tokens for Black pieces ──────────────────── */
+:root {
+  --violet:      #c084fc;
+  --violet-dim:  rgba(192, 132, 252, 0.15);
+  --violet-glow: rgba(192, 132, 252, 0.35);
+}
+
+/* ── Board cells — Black fixed pieces ───────────────────────── */
+.board-cell.fixed-piece.black .piece-glyph {
+  color: var(--violet);
+  filter: drop-shadow(0 0 6px var(--violet-glow));
+}
+.board-cell.fixed-piece.black::after {
+  border-color: var(--violet);
+}
+
+/* ── Board cells — Black solution pieces ────────────────────── */
+/* Solution always teal; but glyph gets violet tint to show colour */
+.board-cell.solution-piece.black .piece-glyph {
+  color: var(--violet);
+  filter: drop-shadow(0 0 8px var(--violet-glow));
+}
+
+/* ── Piece bar — Black selected piece ───────────────────────── */
+.piece-btn.active.black {
+  border-color: var(--violet) !important;
+  background: var(--violet-dim) !important;
+  box-shadow: 0 0 12px var(--violet-glow) !important;
+}
+
+/* ── Colour toggle — Black active ───────────────────────────── */
+.colour-btn.active.black {
+  background: var(--violet-dim);
+  color: var(--violet);
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+/* ── Staging tray — Black piece buttons ─────────────────────── */
+.tray-piece-btn.has-pieces.black {
+  background: var(--violet-dim);
+  border-color: rgba(192, 132, 252, 0.4);
+}
+.tray-piece-btn.has-pieces.black .tray-cnt {
+  color: var(--violet);
+}
+
+/* ── Tray colour label — Black ──────────────────────────────── */
+.tray-colour-label.black {
+  color: var(--violet);
+}
+
+/* ── Size axis labels (Cols / Rows) ─────────────────────────── */
+.size-axis-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sub);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 28px;
+  flex-shrink: 0;
+  padding-top: 6px;
+}
