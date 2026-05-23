@@ -18,7 +18,7 @@ const MODE_HINTS = {
   Presets:       "Fix pieces on the board first, then stage the rest.",
 };
 
-const SIZES = [4, 5, 6, 7, 8];
+const SIZES = [4, 5, 6];
 
 // ── App ───────────────────────────────────────────────────────────────────────
 
@@ -222,29 +222,16 @@ export default function App() {
       />
 
       <div className="board-wrap">
-        {/* Cols — changing also syncs Rows */}
-        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "5px" }}>
-          <div className="board-size-row">
-            <span className="size-axis-label">Cols</span>
-            {SIZES.map((n) => (
-              <button
-                key={n}
-                className={`size-btn${boardCols === n ? " active" : ""}`}
-                onClick={() => handleColsChange(n)}
-              >{n}</button>
-            ))}
-          </div>
-          {/* Rows — independent */}
-          <div className="board-size-row">
-            <span className="size-axis-label">Rows</span>
-            {SIZES.map((n) => (
-              <button
-                key={n}
-                className={`size-btn${boardRows === n ? " active" : ""}`}
-                onClick={() => handleRowsChange(n, boardCols)}
-              >{n}</button>
-            ))}
-          </div>
+        {/* Cols and Rows on one line */}
+        <div className="board-size-row">
+          <span className="size-axis-label">Cols</span>
+          {SIZES.map((n) => (
+            <button key={n} className={`size-btn${boardCols === n ? " active" : ""}`} onClick={() => handleColsChange(n)}>{n}</button>
+          ))}
+          <span className="size-axis-label" style={{ marginLeft: 10 }}>Rows</span>
+          {SIZES.map((n) => (
+            <button key={n} className={`size-btn${boardRows === n ? " active" : ""}`} onClick={() => handleRowsChange(n, boardCols)}>{n}</button>
+          ))}
         </div>
 
         <Board
