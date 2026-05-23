@@ -1,24 +1,20 @@
 import { PIECE_SYMBOLS, ALL_KINDS } from "../solver/engine.js";
 
-// Friendly tool labels shown on the toolbar buttons
 const TOOLS = [
   { id: "place", label: "✦ Place" },
   { id: "block", label: "█ Block" },
   { id: "erase", label: "✕ Erase" },
 ];
 
-// Short letter names rendered beneath each piece icon
 const KIND_LABELS = { K:"King", Q:"Queen", R:"Rook", B:"Bishop", N:"Knight", P:"Pawn" };
 
 export default function Controls({
-  activeTool,
-  onToolChange,
-  selectedKind,
-  selectedColour,
-  onKindChange,
-  onColourChange,
-  showColourToggle,
+  activeTool, onToolChange,
+  selectedKind, selectedColour,
+  onKindChange, onColourChange,
 }) {
+  const isBlack = selectedColour === "B";
+
   return (
     <div className="controls-panel">
       {/* ── Tool bar ── */}
@@ -30,9 +26,7 @@ export default function Controls({
               key={id}
               className={`tool-btn${activeTool === id ? " active" : ""}`}
               onClick={() => onToolChange(id)}
-            >
-              {label}
-            </button>
+            >{label}</button>
           ))}
         </div>
       </div>
@@ -41,16 +35,15 @@ export default function Controls({
       <div className="piece-bar-section">
         <div className="piece-bar-header">
           <div className="section-label" style={{ marginBottom: 0 }}>Piece</div>
-
-          {/* Colour toggle — always visible; critical in Two-Colour mode */}
+          {/* Colour toggle — always visible */}
           <div className="colour-toggle">
             {["W", "B"].map((col) => (
               <button
                 key={col}
-                className={`colour-btn${selectedColour === col ? " active" : ""}`}
+                className={`colour-btn${selectedColour === col ? (col === "B" ? " active black" : " active") : ""}`}
                 onClick={() => onColourChange(col)}
               >
-                {col === "W" ? "White" : "Black"}
+                {col === "W" ? "⬜ White" : "⬛ Black"}
               </button>
             ))}
           </div>
@@ -58,11 +51,12 @@ export default function Controls({
 
         <div className="piece-bar">
           {ALL_KINDS.map((kind) => {
-            const sym = PIECE_SYMBOLS[selectedColour + kind];
+            const sym      = PIECE_SYMBOLS[selectedColour + kind];
+            const isActive = selectedKind === kind;
             return (
               <button
                 key={kind}
-                className={`piece-btn${selectedKind === kind ? " active" : ""}`}
+                className={`piece-btn${isActive ? (isBlack ? " active black" : " active") : ""}`}
                 onClick={() => onKindChange(kind)}
                 aria-label={KIND_LABELS[kind]}
               >
