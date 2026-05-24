@@ -20,7 +20,7 @@ export default defineConfig({
 
       manifest: {
         name: "Chess Peace Solver",
-        short_name: "ChessPeace",
+        short_name: "Chess Peace Solver",
         description:
           "Place every chess piece so that none can capture another.",
         theme_color: "#080c10",
