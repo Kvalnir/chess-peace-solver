@@ -1,46 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <!-- viewport-fit=cover lets content sit under iPhone notch/Dynamic Island -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 
-    <!-- ── Standard PWA ─────────────────────────────────────────────── -->
-    <meta name="theme-color" content="#080c10" />
-    <link rel="manifest" href="/chess-peace-solver/manifest.webmanifest" />
+// ─── IMPORTANT ───────────────────────────────────────────────────────────────
+// This matches your GitHub repo name: github.com/Kvalnir/chess-peace-solver
+// If you ever rename the repo, update REPO_NAME here and re-upload this file.
+// ─────────────────────────────────────────────────────────────────────────────
+const REPO_NAME = "chess-peace-solver";
 
-    <!-- ── iOS-specific (Safari ignores the manifest for these) ─────── -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-title" content="ChessPeace" />
-    <link
-      rel="apple-touch-icon"
-      href="/chess-peace-solver/icons/apple-touch-icon.png"
-    />
+export default defineConfig({
+  base: `/${REPO_NAME}/`,
 
-    <!-- ── Misc ─────────────────────────────────────────────────────── -->
-    <meta name="format-detection" content="telephone=no" />
-    <link rel="icon" type="image/svg+xml" href="/chess-peace-solver/icons/icon.svg" />
+  plugins: [
+    react(),
 
-    <!-- ── Typography: JetBrains Mono (technical labels) +
-             Crimson Pro (elegant chess-bookish title) ──────────────── -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "icons/*.png"],
 
-    <title>Chess Peace Solver</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+      manifest: {
+        name: "Chess Peace Solver",
+        short_name: "Chess Peace Solver",
+        description:
+          "Place every chess piece so that none can capture another.",
+        theme_color: "#080c10",
+        background_color: "#080c10",
+        display: "standalone",
+        orientation: "portrait",
+        scope: `/${REPO_NAME}/`,
+        start_url: `/${REPO_NAME}/`,
+        icons: [
+          {
+            src: `/${REPO_NAME}/icons/icon-192.png`,
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: `/${REPO_NAME}/icons/icon-512.png`,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
+          },
+        ],
+      },
+
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,png,ico,svg,woff2}"],
+        runtimeCaching: [],
+        // Prevent the service worker from intercepting cross-origin requests
+        navigateFallback: `/${REPO_NAME}/index.html`,
+        navigateFallbackDenylist: [/^\/api/],
+      },
+    }),
+  ],
+
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split solver into its own chunk for faster initial paint
+          solver: ["./src/solver/engine.js"],
+        },
+      },
+    },
+  },
+
+  worker: {
+    // Vite needs to know workers use ES modules
+    format: "es",
+  },
+});
