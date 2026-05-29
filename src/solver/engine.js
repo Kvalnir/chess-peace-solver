@@ -133,8 +133,12 @@ export function solve(boardConfig, pieces) {
   const fixedSquareKeys = new Set(fixedIdx.map(i => coordKey(...pieces[i].fixedPos)));
 
   const hasPresets = presetSquares.length > 0;
-  const presetKeySet = hasPresets ? new Set(presetSquares.map(([r,c]) => coordKey(r,c))) : null;
-  const presetCount = presetSquares.length;
+  // Exclude squares already occupied by fixed pieces — usedKeys only tracks free pieces,
+  // so the base-case check and filledPresets counter must only cover unfilled presets.
+  const presetKeySet = hasPresets
+    ? new Set(presetSquares.map(([r,c]) => coordKey(r,c)).filter(k => !fixedSquareKeys.has(k)))
+    : null;
+  const presetCount = hasPresets ? presetKeySet.size : 0;
 
   const available = board.accessible.filter(([r, c]) => !fixedSquareKeys.has(coordKey(r, c)));
 
@@ -147,10 +151,6 @@ export function solve(boardConfig, pieces) {
   }
 
   let filledPresets = 0;
-  if (hasPresets) {
-    for (const fi of fixedIdx)
-      if (presetKeySet.has(coordKey(...pieces[fi].fixedPos))) filledPresets++;
-  }
 
   const placedR = new Int8Array(pieces.length).fill(-1);
   const placedC = new Int8Array(pieces.length).fill(-1);
@@ -175,6 +175,9 @@ export function solve(boardConfig, pieces) {
     if (solution) return;
     if (hasPresets && (presetCount - filledPresets) > (freeIdx.length - depth)) return;
     if (depth === freeIdx.length) {
+      if (hasPresets) {
+        for (const k of presetKeySet) if (!usedKeys.has(k)) return;
+      }
       const result = {};
       for (const fi of fixedIdx) result[fi] = pieces[fi].fixedPos;
       for (const pi of freeIdx)  result[pi] = [placedR[pi], placedC[pi]];
