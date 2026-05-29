@@ -2,30 +2,29 @@ import { useRef, useCallback } from "react";
 import { PIECE_SYMBOLS } from "../solver/engine.js";
 
 export default function Board({
-  boardRows,
-  boardCols,
-  cells,
-  solutionMap,
-  activeTool,
-  selectedKind,
-  selectedColour,
-  onCellAction,
+  boardRows, boardCols, cells, solutionMap,
+  activeTool, selectedKind, selectedColour, onCellAction,
 }) {
   const gridRef  = useRef(null);
   const paintRef = useRef(null);
 
   const getAction = useCallback((r, c) => {
     const current = cells[`${r},${c}`];
-    if (activeTool === "erase") return "erase";
-    if (activeTool === "block") return current?.type === "blocked" ? "erase" : "block";
+    if (activeTool === "erase")  return "erase";
+    if (activeTool === "block")  return current?.type === "blocked" ? "erase" : "block";
+    if (activeTool === "preset") {
+      // Can only mark empty squares as preset
+      if (current?.type === "fixed" || current?.type === "blocked") return null;
+      return current?.type === "preset" ? "erase" : "preset";
+    }
     // "place" tool
     if (current?.type === "fixed")   return "erase";
     if (current?.type === "blocked") return null;
     return "place";
   }, [activeTool, cells]);
 
-  const getCellAt = useCallback((clientX, clientY) => {
-    const el   = document.elementFromPoint(clientX, clientY);
+  const getCellAt = useCallback((x, y) => {
+    const el   = document.elementFromPoint(x, y);
     const cell = el?.closest?.("[data-row]");
     if (!cell) return null;
     return { r: parseInt(cell.dataset.row, 10), c: parseInt(cell.dataset.col, 10) };
@@ -48,9 +47,9 @@ export default function Board({
     const cell = getCellAt(e.clientX, e.clientY);
     if (!cell) return;
     const { r, c } = cell;
-    const cellKey = `${r},${c}`;
-    if (paintRef.current.visited.has(cellKey)) return;
-    paintRef.current.visited.add(cellKey);
+    const key = `${r},${c}`;
+    if (paintRef.current.visited.has(key)) return;
+    paintRef.current.visited.add(key);
     onCellAction(r, c, paintRef.current.action);
   }, [getCellAt, onCellAction]);
 
@@ -61,26 +60,26 @@ export default function Board({
     const cellData = cells[cellKey];
     const solPiece = solutionMap[cellKey];
     const isLight  = (r + c) % 2 === 0;
-
-    let cls     = `board-cell ${isLight ? "light" : "dark"}`;
+    let cls = `board-cell ${isLight ? "light" : "dark"}`;
     let content = null;
 
     if (cellData?.type === "blocked") {
-      cls    += " blocked";
+      cls += " blocked";
       content = <span style={{ fontSize: "0.6em", opacity: 0.5 }}>▪</span>;
 
+    } else if (cellData?.type === "preset") {
+      cls += " preset";
+      content = <span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span>;
+
     } else if (solPiece) {
-      // Solution piece — colour class drives glyph colour
-      cls    += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
+      cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
       content = <span className="piece-glyph">{solPiece.symbol}</span>;
 
     } else if (cellData?.type === "fixed") {
-      const sym = PIECE_SYMBOLS[cellData.colour + cellData.kind];
-      cls    += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
-      content = <span className="piece-glyph">{sym}</span>;
+      cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
+      content = <span className="piece-glyph">{PIECE_SYMBOLS[cellData.colour + cellData.kind]}</span>;
 
     } else {
-      // Invisible flush character to clear GPU glyph cache on iOS
       content = <span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span>;
     }
 
@@ -103,11 +102,7 @@ export default function Board({
       ref={gridRef}
       className="board-grid"
       role="grid"
-      aria-label="Chess board"
-      style={{
-        "--board-cols": boardCols,
-        gridTemplateColumns: `repeat(${boardCols}, var(--cell))`,
-      }}
+      style={{ "--board-cols": boardCols, gridTemplateColumns: `repeat(${boardCols}, var(--cell))` }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
