@@ -115,9 +115,10 @@ export class Board {
 }
 
 // ── Solver ────────────────────────────────────────────────────────────────────
-// boardConfig.presetSquares — if non-empty, pieces may ONLY be placed on those squares.
-// This implements Presets mode: the game reveals which squares will be occupied,
-// but not which pieces go where.
+// boardConfig.presetSquares — if non-empty, every preset square must be occupied
+// in the final solution, but pieces may be placed on any accessible square.
+// Preset squares are tried first; branches where empty presets exceed pieces
+// remaining are pruned immediately.
 
 export function solve(boardConfig, pieces) {
   const { rows, cols, blocked, islandsMode, twoColour, presetSquares = [] } = boardConfig;
@@ -131,15 +132,25 @@ export function solve(boardConfig, pieces) {
 
   const fixedSquareKeys = new Set(fixedIdx.map(i => coordKey(...pieces[i].fixedPos)));
 
-  // If preset squares are defined, restrict placement to only those squares
   const hasPresets = presetSquares.length > 0;
   const presetKeySet = hasPresets ? new Set(presetSquares.map(([r,c]) => coordKey(r,c))) : null;
+  const presetCount = presetSquares.length;
 
-  const available = board.accessible.filter(([r, c]) => {
-    if (fixedSquareKeys.has(coordKey(r, c))) return false;
-    if (hasPresets) return presetKeySet.has(coordKey(r, c));
-    return true;
-  });
+  const available = board.accessible.filter(([r, c]) => !fixedSquareKeys.has(coordKey(r, c)));
+
+  if (hasPresets) {
+    available.sort((a, b) => {
+      const aP = presetKeySet.has(coordKey(...a)) ? 0 : 1;
+      const bP = presetKeySet.has(coordKey(...b)) ? 0 : 1;
+      return aP - bP;
+    });
+  }
+
+  let filledPresets = 0;
+  if (hasPresets) {
+    for (const fi of fixedIdx)
+      if (presetKeySet.has(coordKey(...pieces[fi].fixedPos))) filledPresets++;
+  }
 
   const placedR = new Int8Array(pieces.length).fill(-1);
   const placedC = new Int8Array(pieces.length).fill(-1);
@@ -162,6 +173,7 @@ export function solve(boardConfig, pieces) {
 
   function backtrack(depth) {
     if (solution) return;
+    if (hasPresets && (presetCount - filledPresets) > (freeIdx.length - depth)) return;
     if (depth === freeIdx.length) {
       const result = {};
       for (const fi of fixedIdx) result[fi] = pieces[fi].fixedPos;
@@ -173,10 +185,13 @@ export function solve(boardConfig, pieces) {
     for (const [r,c] of available) {
       const k = coordKey(r,c);
       if (usedKeys.has(k) || !ok(pieceIdx,r,c)) continue;
+      const isPreset = hasPresets && presetKeySet.has(k);
       placedR[pieceIdx]=r; placedC[pieceIdx]=c; usedKeys.add(k);
+      if (isPreset) filledPresets++;
       backtrack(depth+1);
       if (solution) return;
       placedR[pieceIdx]=-1; placedC[pieceIdx]=-1; usedKeys.delete(k);
+      if (isPreset) filledPresets--;
     }
   }
 
