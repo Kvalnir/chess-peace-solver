@@ -5,9 +5,6 @@ import Controls from "./components/Controls.jsx";
 import StagingTray from "./components/StagingTray.jsx";
 import ModeSelector from "./components/ModeSelector.jsx";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-// Order matches the ChessPeace main game menu
 const MODES = ["Classic", "Multiples", "Two-Colour", "Islands", "Presets"];
 
 const MODE_HINTS = {
@@ -15,39 +12,37 @@ const MODE_HINTS = {
   Multiples:     "Add multiple copies of the same piece to the tray.",
   "Two-Colour":  "White & black pieces coexist. Only opposite colours threaten each other.",
   Islands:       "Block squares to split the board. Pieces only threaten within their island.",
-  Presets:       "Fix pieces on the board first, then stage the rest.",
+  Presets:       "Mark preset squares (○) where pieces must go, then stage the pieces.",
 };
 
 const SIZES = [4, 5, 6];
 
-// ── App ───────────────────────────────────────────────────────────────────────
+// Modes that auto-populate the staging tray with 1 of each piece
+const AUTO_TRAY_MODES = ["Classic", "Islands", "Presets"];
+
+const defaultStaged = () => ALL_KINDS.map(kind => ({ kind, colour: "W" }));
 
 export default function App() {
-  // ── Board dimensions (cols change syncs rows; rows are independent) ──
   const [boardCols, setBoardCols] = useState(5);
   const [boardRows, setBoardRows] = useState(5);
-
   const [mode,      setMode]      = useState("Classic");
-  // cells: { "r,c": { type: "fixed"|"blocked", kind?, colour? } }
   const [cells,     setCells]     = useState({});
 
-  // ── Piece selection ──────────────────────────────────────────────────
   const [selectedKind,   setSelectedKind]   = useState("Q");
   const [selectedColour, setSelectedColour] = useState("W");
-  const [activeTool,     setActiveTool]     = useState("place");
+  // Default tool is "block" — configure the board before placing pieces
+  const [activeTool, setActiveTool] = useState("block");
 
-  // ── Staging tray ─────────────────────────────────────────────────────
-  const [staged,   setStaged]   = useState([]);
+  // Auto-populate staging tray for Classic/Islands/Presets on first load
+  const [staged,   setStaged]   = useState(defaultStaged());
   const [trayMode, setTrayMode] = useState("add");
 
-  // ── Solve state ──────────────────────────────────────────────────────
   const [solving,   setSolving]   = useState(false);
   const [solution,  setSolution]  = useState(null);
   const [resultMsg, setResultMsg] = useState(null);
 
-  // ── Worker ───────────────────────────────────────────────────────────
-  const workerRef    = useRef(null);
-  const requestIdRef = useRef(0);
+  const workerRef     = useRef(null);
+  const requestIdRef  = useRef(0);
   const solveStartRef = useRef(0);
 
   useEffect(() => {
@@ -75,9 +70,9 @@ export default function App() {
     return () => workerRef.current?.terminate();
   }, []);
 
-  // ── Clip cells to new bounds ─────────────────────────────────────────
+  // ── Clip helpers ──────────────────────────────────────────────
   const clipCells = useCallback((rows, cols) => {
-    setCells((prev) => {
+    setCells(prev => {
       const next = {};
       for (const [key, data] of Object.entries(prev)) {
         const [r, c] = key.split(",").map(Number);
@@ -85,42 +80,41 @@ export default function App() {
       }
       return next;
     });
-    setSolution(null);
-    setResultMsg(null);
+    setSolution(null); setResultMsg(null);
   }, []);
 
-  // Changing cols also syncs rows
   const handleColsChange = useCallback((n) => {
-    setBoardCols(n);
-    setBoardRows(n);
-    clipCells(n, n);
+    setBoardCols(n); setBoardRows(n); clipCells(n, n);
   }, [clipCells]);
 
-  // Rows can be changed independently
   const handleRowsChange = useCallback((n, currentCols) => {
-    setBoardRows(n);
-    clipCells(n, currentCols);
+    setBoardRows(n); clipCells(n, currentCols);
   }, [clipCells]);
 
-  // ── Build puzzle config for solver ───────────────────────────────────
+  // ── Build puzzle for solver ───────────────────────────────────
   const buildPuzzle = useCallback(() => {
-    const blocked = [];
-    const pieces  = [];
+    const blocked = [], pieces = [], presetSquares = [];
     for (const [key, data] of Object.entries(cells)) {
       const [r, c] = key.split(",").map(Number);
-      if (data.type === "blocked")      blocked.push([r, c]);
+      if      (data.type === "blocked") blocked.push([r, c]);
       else if (data.type === "fixed")   pieces.push({ kind: data.kind, colour: data.colour, fixedPos: [r, c] });
+      else if (data.type === "preset")  presetSquares.push([r, c]);
     }
-    for (const { kind, colour } of staged) {
+    for (const { kind, colour } of staged)
       pieces.push({ kind, colour, fixedPos: null });
-    }
     return {
-      boardConfig: { rows: boardRows, cols: boardCols, blocked, islandsMode: mode === "Islands", twoColour: mode === "Two-Colour" },
+      boardConfig: {
+        rows: boardRows, cols: boardCols, blocked,
+        islandsMode: mode === "Islands",
+        twoColour:   mode === "Two-Colour",
+        // Only restrict to preset squares when in Presets mode
+        presetSquares: mode === "Presets" ? presetSquares : [],
+      },
       pieces,
     };
   }, [cells, staged, boardRows, boardCols, mode]);
 
-  // ── Solution display map ─────────────────────────────────────────────
+  // ── Solution display map ──────────────────────────────────────
   const solutionMap = (() => {
     if (!solution) return {};
     const { pieces } = buildPuzzle();
@@ -128,45 +122,78 @@ export default function App() {
     for (const [idxStr, pos] of Object.entries(solution)) {
       const piece = pieces[Number(idxStr)];
       if (!piece || !pos) continue;
-      map[`${pos[0]},${pos[1]}`] = { kind: piece.kind, colour: piece.colour, symbol: PIECE_SYMBOLS[piece.colour + piece.kind] };
+      map[`${pos[0]},${pos[1]}`] = {
+        kind: piece.kind, colour: piece.colour,
+        symbol: PIECE_SYMBOLS[piece.colour + piece.kind],
+      };
     }
     return map;
   })();
 
-  // ── Board cell interaction ───────────────────────────────────────────
+  // ── Cell interaction ──────────────────────────────────────────
+  // In auto-tray modes, placing a fixed piece removes it from staged,
+  // and removing a fixed piece adds it back.
   const handleCellAction = useCallback((r, c, action) => {
-    const cellKey = `${r},${c}`;
-    setCells((prev) => {
-      const next    = { ...prev };
-      const current = prev[cellKey];
+    const cellKey     = `${r},${c}`;
+    const autoSync    = AUTO_TRAY_MODES.includes(mode);
+    const currentCell = cells[cellKey]; // snapshot before update
+
+    setCells(prev => {
+      const next = { ...prev };
+      const cur  = prev[cellKey];
       if (action === "place") {
-        if (current?.type === "blocked") return prev;
-        if (current?.type === "fixed")   delete next[cellKey];
+        if (cur?.type === "blocked") return prev;
+        if (cur?.type === "fixed")   delete next[cellKey];
         else next[cellKey] = { type: "fixed", kind: selectedKind, colour: selectedColour };
       } else if (action === "block") {
-        if (current?.type === "blocked") delete next[cellKey];
+        if (cur?.type === "blocked") delete next[cellKey];
         else next[cellKey] = { type: "blocked" };
+      } else if (action === "preset") {
+        if (cur?.type === "preset")  delete next[cellKey];
+        else if (!cur || (cur.type !== "fixed" && cur.type !== "blocked"))
+          next[cellKey] = { type: "preset" };
       } else if (action === "erase") {
         delete next[cellKey];
       }
       return next;
     });
-    setSolution(null);
-    setResultMsg(null);
-  }, [selectedKind, selectedColour]);
 
-  // ── Mode change ──────────────────────────────────────────────────────
+    // Sync staging tray
+    if (autoSync) {
+      if (action === "place") {
+        if (currentCell?.type === "fixed") {
+          // Removing a fixed piece → add it back to staged
+          setStaged(prev => [...prev, { kind: currentCell.kind, colour: currentCell.colour }]);
+        } else if (!currentCell || currentCell.type === "preset") {
+          // Placing a new fixed piece → remove one matching from staged
+          setStaged(prev => {
+            const idx = prev.findIndex(p => p.kind === selectedKind && p.colour === selectedColour);
+            if (idx === -1) return prev;
+            return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+          });
+        }
+      } else if ((action === "erase" || action === "block") && currentCell?.type === "fixed") {
+        setStaged(prev => [...prev, { kind: currentCell.kind, colour: currentCell.colour }]);
+      }
+    }
+
+    setSolution(null); setResultMsg(null);
+  }, [selectedKind, selectedColour, mode, cells]);
+
+  // ── Mode change ───────────────────────────────────────────────
   const handleModeChange = useCallback((newMode) => {
     setMode(newMode);
-    setSolution(null);
-    setResultMsg(null);
+    setSolution(null); setResultMsg(null);
+    // Auto-populate tray if switching into an auto-tray mode with empty tray
+    if (AUTO_TRAY_MODES.includes(newMode)) {
+      setStaged(prev => prev.length === 0 ? defaultStaged() : prev);
+    }
   }, []);
 
-  // ── Staging tray ─────────────────────────────────────────────────────
+  // ── Staging tray ──────────────────────────────────────────────
   const handleTrayClick = useCallback((kind, colour) => {
-    setSolution(null);
-    setResultMsg(null);
-    setStaged((prev) => {
+    setSolution(null); setResultMsg(null);
+    setStaged(prev => {
       if (trayMode === "add") return [...prev, { kind, colour }];
       const idx = [...prev].reverse().findIndex(p => p.kind === kind && p.colour === colour);
       if (idx === -1) return prev;
@@ -184,32 +211,28 @@ export default function App() {
     return counts;
   })();
 
-  // ── Solve ────────────────────────────────────────────────────────────
+  // ── Solve ─────────────────────────────────────────────────────
   const handleSolve = useCallback(() => {
     const { boardConfig, pieces } = buildPuzzle();
     if (pieces.length === 0) {
       setResultMsg({ kind: "warning", text: "Add pieces to the staging tray first." });
       return;
     }
-    setSolving(true);
-    setSolution(null);
-    setResultMsg(null);
+    setSolving(true); setSolution(null); setResultMsg(null);
     solveStartRef.current = performance.now();
     workerRef.current?.postMessage({ boardConfig, pieces, requestId: ++requestIdRef.current });
   }, [buildPuzzle]);
 
-  // ── Clear ────────────────────────────────────────────────────────────
+  // ── Clear — resets to block tool and repopulates tray ─────────
   const handleClear = useCallback(() => {
     setCells({});
-    setStaged([]);
-    setSolution(null);
-    setResultMsg(null);
-    setSolving(false);
-  }, []);
+    setStaged(AUTO_TRAY_MODES.includes(mode) ? defaultStaged() : []);
+    setSolution(null); setResultMsg(null); setSolving(false);
+    setActiveTool("block"); // board setup comes first
+  }, [mode]);
 
   const showBlackRow = mode === "Two-Colour";
 
-  // ── Render ───────────────────────────────────────────────────────────
   return (
     <div className="app">
       <header className="app-header">
@@ -225,15 +248,14 @@ export default function App() {
       />
 
       <div className="board-wrap">
-        {/* Cols and Rows on one line */}
         <div className="board-size-row">
           <span className="size-axis-label">Cols</span>
-          {SIZES.map((n) => (
-            <button key={n} className={`size-btn${boardCols === n ? " active" : ""}`} onClick={() => handleColsChange(n)}>{n}</button>
+          {SIZES.map(n => (
+            <button key={n} className={`size-btn${boardCols===n?" active":""}`} onClick={() => handleColsChange(n)}>{n}</button>
           ))}
           <span className="size-axis-label" style={{ marginLeft: 10 }}>Rows</span>
-          {SIZES.map((n) => (
-            <button key={n} className={`size-btn${boardRows === n ? " active" : ""}`} onClick={() => handleRowsChange(n, boardCols)}>{n}</button>
+          {SIZES.map(n => (
+            <button key={n} className={`size-btn${boardRows===n?" active":""}`} onClick={() => handleRowsChange(n, boardCols)}>{n}</button>
           ))}
         </div>
 
@@ -256,7 +278,7 @@ export default function App() {
         selectedColour={selectedColour}
         onKindChange={setSelectedKind}
         onColourChange={setSelectedColour}
-        showColourToggle={mode === "Two-Colour"}
+        mode={mode}
       />
 
       <div className="divider" style={{ margin: "4px 0" }} />

@@ -694,3 +694,29 @@ body {
   flex-shrink: 0;
   padding-top: 6px;
 }
+
+/* ── Preset squares (Presets mode) ──────────────────────────── */
+/* Shows a teal circle indicator — matches the ChessPeace game visual */
+.board-cell.preset {
+  position: relative;
+}
+.board-cell.preset::before {
+  content: '';
+  position: absolute;
+  width: 56%;
+  height: 56%;
+  border-radius: 50%;
+  border: 2.5px solid var(--teal);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Preset tool button gets a subtle teal tint to distinguish it */
+.tool-btn.preset-tool {
+  color: var(--teal);
+}
+.tool-btn.preset-tool.active {
+  border-color: var(--teal);
+  background: var(--teal-dim);
+  color: var(--teal);
+}
