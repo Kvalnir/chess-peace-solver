@@ -4,41 +4,54 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 
 **Live app → [kvalnir.github.io/chess-peace-solver](https://kvalnir.github.io/chess-peace-solver/)**
 
------
+---
 
 ## Features
 
 - **All five puzzle modes** — Classic, Multiples, Two-Colour, Islands, Presets
 - **Tap-to-place & drag-paint** — touch-optimised board interaction
 - **Non-square boards** — set columns and rows independently (4–6)
+- **Smart staging tray** — auto-populated with one of each piece in Classic/Islands/Presets modes; stays in sync as you place and remove fixed pieces
+- **Preset squares** — mark positions with a circle (○) in Presets mode; solver restricts placement to only those squares
 - **WebWorker solver** — runs off the main thread so the UI never freezes
 - **Solve time display** — shows compute time in milliseconds
 - **Offline capable** — works without an internet connection once installed
 - **iOS PWA** — install via Safari → Share → Add to Home Screen
 
------
+---
 
 ## How to Use
 
-### Setting up the board
+### Recommended workflow
 
-|Action        |How                                                  |
-|--------------|-----------------------------------------------------|
-|Place a piece |Select a piece from the bar, tap any empty square    |
-|Remove a piece|Tap an existing piece again                          |
-|Block a square|Switch to **Block** tool, tap a square               |
-|Erase anything|Switch to **Erase** tool, tap a square               |
-|Drag-paint    |Hold and drag across squares to apply the same action|
+1. **Set board size** — match your puzzle (Cols × Rows)
+2. **Select mode** — choose the puzzle type
+3. **Block tool is active by default** — tap squares to mark them blocked
+4. **Switch to Preset tool** *(Presets mode only)* — mark squares where pieces must go
+5. **Switch to Place tool** — fix any pieces at known positions
+6. **Check the staging tray** — adjust counts if needed
+7. **Tap Solve** — solution appears on the board in teal
+
+### Board tools
+
+| Tool | Action |
+|---|---|
+| **✦ Place** | Tap empty square to place selected piece · Tap piece again to remove |
+| **█ Block** | Tap to mark a square inaccessible · Tap again to unblock |
+| **○ Preset** | *(Presets mode only)* Tap to mark a position that must contain a piece · Tap again to unmark |
+| **✕ Erase** | Tap anything to remove it |
+
+**Drag-paint:** Hold and drag across squares to apply the same action to multiple squares at once.
 
 ### Puzzle modes
 
-|Mode          |Description                                                               |
-|--------------|--------------------------------------------------------------------------|
-|**Classic**   |One of each piece type — add all six to the staging tray                  |
-|**Multiples** |Multiple copies of the same piece — add as many as needed                 |
-|**Two-Colour**|White and black pieces coexist; only opposite colours threaten each other |
-|**Islands**   |Blocked squares divide the board; pieces only threaten within their island|
-|**Presets**   |Fix pieces at known positions on the board first, then stage the rest     |
+| Mode | Description |
+|---|---|
+| **Classic** | One of each piece type — tray auto-fills with all six |
+| **Multiples** | Multiple copies of the same piece — add as many as needed |
+| **Two-Colour** | White and black pieces coexist; only opposite colours threaten each other |
+| **Islands** | Blocked squares divide the board; pieces only threaten within their island |
+| **Presets** | Mark the squares where pieces must go (○), then stage the pieces — tray auto-fills with all six |
 
 ### Staging tray
 
@@ -46,27 +59,24 @@ The tray holds pieces for the solver to auto-place.
 
 - **`+` mode** — tap a piece icon to queue one copy
 - **`−` mode** — tap a piece icon to remove one copy
-- Amber count = White pieces queued · Violet count = Black pieces queued
+- In Classic / Islands / Presets modes, the tray starts with one of each piece and stays in sync with fixed pieces placed on the board
+- Amber count = White pieces queued · Violet count = Black pieces queued *(Two-Colour mode)*
 
-### Solving
+### Reset
 
-1. Set the board size to match your puzzle (Cols × Rows)
-1. Select the correct puzzle mode
-1. Add pieces to the staging tray (and optionally fix preset pieces on the board)
-1. Tap **Solve Puzzle ♟**
-1. The solution appears on the board in teal · Solve time shown below
+Clears the board and restores defaults — tool resets to **Block**, staging tray repopulates for relevant modes.
 
------
+---
 
 ## Colour System
 
-|Colour  |Meaning                   |
-|--------|--------------------------|
-|🟡 Amber |White piece / White player|
-|🟣 Violet|Black piece / Black player|
-|🩵 Teal  |Solver solution output    |
+| Colour | Meaning |
+|---|---|
+| 🟡 Amber | White piece / White player |
+| 🟣 Violet | Black piece / Black player |
+| 🩵 Teal | Solver solution output / Preset markers |
 
------
+---
 
 ## Project Structure
 
@@ -93,34 +103,33 @@ chess-peace-solver/
 └── package.json
 ```
 
------
+---
 
 ## Tech Stack
 
-|           |                                         |
-|-----------|-----------------------------------------|
-|Framework  |React 18                                 |
-|Bundler    |Vite 5                                   |
-|PWA        |vite-plugin-pwa (Workbox)                |
-|Styling    |Plain CSS custom properties              |
-|Solver     |Pure JS backtracking, runs in a WebWorker|
-|Hosting    |GitHub Pages (free)                      |
-|Bundle size|~52 KB gzipped                           |
+| | |
+|---|---|
+| Framework | React 18 |
+| Bundler | Vite 5 |
+| PWA | vite-plugin-pwa (Workbox) |
+| Styling | Plain CSS custom properties |
+| Solver | Pure JS backtracking, runs in a WebWorker |
+| Hosting | GitHub Pages (free) |
+| Bundle size | ~52 KB gzipped |
 
------
+---
 
 ## Deploying Changes
 
 This repo uses GitHub Actions. Every file you commit to `main` automatically triggers a rebuild and redeploy — no local tools needed.
 
 To update the live app:
-
 1. Edit any file directly on GitHub (click the file → pencil icon)
-1. Commit to `main`
-1. Wait ~60 seconds for the Actions workflow to complete
-1. The live URL updates automatically
+2. Commit to `main`
+3. Wait ~60 seconds for the Actions workflow to complete
+4. The live URL updates automatically
 
------
+---
 
 ## Solver Algorithm
 
@@ -131,8 +140,9 @@ The engine is a direct JavaScript port of the original Python notebook:
 - **Precomputed ray cache** — all sliding-piece attack lines built once at board initialisation for O(1) lookup during search
 - **Island BFS** — flood-fill assigns each accessible square an island ID; threats are filtered to same-island pairs in Islands mode
 - **Two-colour exemption** — same-colour pieces skip the threat check entirely
+- **Preset square restriction** — in Presets mode, the solver only considers marked squares as valid placements
 
------
+---
 
 ## Credits
 
