@@ -79,6 +79,12 @@
       function drawIcon(canvas) {
         const s = canvas.width;
         const ctx = canvas.getContext('2d');
+        const radius = s * 0.22; // ~22% — matches iOS home screen rounding
+
+        // Clip everything to a rounded rectangle so corners are transparent in the PNG
+        ctx.beginPath();
+        ctx.roundRect(0, 0, s, s, radius);
+        ctx.clip();
 
         // Background — deep obsidian with subtle radial glow
         ctx.fillStyle = '#080c10';
