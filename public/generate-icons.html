@@ -36,7 +36,7 @@
         gap: 12px;
         width: 260px;
       }
-      canvas { border-radius: 50%; border: 1px solid #30363d; }
+      canvas { border-radius: 22%; border: 1px solid #30363d; }
       button {
         background: #2dd4bf;
         color: #080c10;
@@ -79,9 +79,11 @@
       function drawIcon(canvas) {
         const s = canvas.width;
         const ctx = canvas.getContext('2d');
-        // Clip everything to a circle so corners are transparent in the PNG
+        const radius = s * 0.22; // ~22% — matches iOS home screen rounding
+
+        // Clip everything to a rounded rectangle so corners are transparent in the PNG
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+        ctx.roundRect(0, 0, s, s, radius);
         ctx.clip();
 
         // Background — deep obsidian with subtle radial glow
