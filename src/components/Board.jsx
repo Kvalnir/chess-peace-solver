@@ -67,13 +67,13 @@ export default function Board({
       cls += " blocked";
       content = <span style={{ fontSize: "0.6em", opacity: 0.5 }}>▪</span>;
 
-    } else if (cellData?.type === "preset") {
-      cls += " preset";
-      content = <span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span>;
-
     } else if (solPiece) {
       cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
       content = <span className="piece-glyph">{solPiece.symbol}</span>;
+
+    } else if (cellData?.type === "preset") {
+      cls += " preset";
+      content = <span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span>;
 
     } else if (cellData?.type === "fixed") {
       cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
