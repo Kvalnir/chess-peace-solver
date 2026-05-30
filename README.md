@@ -12,7 +12,7 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 - **Tap-to-place & drag-paint** — touch-optimised board interaction
 - **Non-square boards** — set columns and rows independently (4–6)
 - **Smart staging tray** — auto-populated with one of each piece in Classic/Islands/Presets modes; stays in sync as you place and remove fixed pieces
-- **Preset squares** — mark positions with a circle (○) in Presets mode; solver restricts placement to only those squares
+- **Preset squares** — mark positions with a circle (○) in Presets mode; every marked square must be occupied in the solution, but pieces may be placed anywhere on the board
 - **WebWorker solver** — runs off the main thread so the UI never freezes
 - **Solve time display** — shows compute time in milliseconds
 - **Offline capable** — works without an internet connection once installed
@@ -140,7 +140,7 @@ The engine is a direct JavaScript port of the original Python notebook:
 - **Precomputed ray cache** — all sliding-piece attack lines built once at board initialisation for O(1) lookup during search
 - **Island BFS** — flood-fill assigns each accessible square an island ID; threats are filtered to same-island pairs in Islands mode
 - **Two-colour exemption** — same-colour pieces skip the threat check entirely
-- **Preset square restriction** — in Presets mode, the solver only considers marked squares as valid placements
+- **Preset square constraint** — in Presets mode, pieces may be placed on any accessible square, but every marked square must be occupied in the final solution; preset squares are tried first and branches are pruned early when remaining empty presets exceed pieces left to place
 
 ---
 
