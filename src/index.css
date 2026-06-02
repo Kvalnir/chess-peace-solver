@@ -50,7 +50,8 @@
   --sal: env(safe-area-inset-left,   0px);
 
   /* Board cell: fills available width ÷ columns, min 40px max 68px */
-  --cell: clamp(40px, calc((100vw - 32px) / var(--board-cols, 5)), 68px);
+  /* 32px = body side padding (16px each side) + 32px = board-wrap padding (16px each side) */
+  --cell: clamp(40px, calc((100vw - 64px) / var(--board-cols, 5)), 68px);
 }
 
 /* ── Document ───────────────────────────────────────────────── */
@@ -72,11 +73,11 @@ body {
   background-image:
     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,212,191,0.06) 0%, transparent 70%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  /* Padding for safe areas */
+  /* Padding for safe areas + extra horizontal margin so iOS edge-swipe doesn't compete with scrolling */
   padding-top: var(--sat);
   padding-bottom: calc(var(--sab) + 8px);
-  padding-left: var(--sal);
-  padding-right: var(--sar);
+  padding-left: max(var(--sal), 16px);
+  padding-right: max(var(--sar), 16px);
 }
 
 /* ── App shell ──────────────────────────────────────────────── */
