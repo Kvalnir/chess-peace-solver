@@ -73,9 +73,9 @@ Clears the board and restores defaults — tool resets to **Block**, staging tra
 
 | Colour | Meaning |
 |---|---|
-| 🟡 Amber | White piece / White player |
-| 🟣 Violet | Black piece / Black player |
-| 🩵 Teal | Solver solution output / Preset markers |
+| 🟡 Amber | White piece / White player — whether placed by you or by the solver |
+| 🟣 Violet | Black piece / Black player — whether placed by you or by the solver |
+| 🩵 Teal | Preset markers (○) and accessible-region outlines |
 
 ---
 

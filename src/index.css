@@ -276,15 +276,15 @@ body {
 }
 
 .board-cell.solution-piece .piece-glyph {
-  color: var(--teal);
-  filter: drop-shadow(0 0 8px var(--teal-glow));
+  color: var(--amber);
+  filter: drop-shadow(0 0 8px rgba(251,191,36,0.5));
 }
 .board-cell.solution-piece::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--teal-dim);
-  border: 2px solid rgba(45,212,191,0.6);
+  background: var(--amber-dim);
+  border: 2px solid rgba(251,191,36,0.6);
   border-radius: 0;
   pointer-events: none;
   animation: solveFlash 0.4s ease-out;
@@ -664,10 +664,14 @@ body {
 }
 
 /* ── Board cells — Black solution pieces ────────────────────── */
-/* Solution always teal; but glyph gets violet tint to show colour */
+/* Solution pieces are tinted by colour: White → amber, Black → violet */
 .board-cell.solution-piece.black .piece-glyph {
   color: var(--violet);
   filter: drop-shadow(0 0 8px var(--violet-glow));
+}
+.board-cell.solution-piece.black::after {
+  background: var(--violet-dim);
+  border-color: rgba(192,132,252,0.6);
 }
 
 /* ── Piece bar — Black selected piece ───────────────────────── */
