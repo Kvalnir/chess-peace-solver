@@ -50,8 +50,9 @@
   --sal: env(safe-area-inset-left,   0px);
 
   /* Board cell: fills available width ÷ columns, min 40px max 68px */
-  /* 32px = body side padding (16px each side) + 32px = board-wrap padding (16px each side) */
-  --cell: clamp(40px, calc((100vw - 64px) / var(--board-cols, 5)), 68px);
+  /* Subtracts body padding (32px) + board-wrap padding (32px) + col gaps ((cols-1)×2px) + border (4px) */
+  /* Simplifies to: (100vw - 66px) / cols - 2px */
+  --cell: clamp(40px, calc((100vw - 66px) / var(--board-cols, 5) - 2px), 68px);
 }
 
 /* ── Document ───────────────────────────────────────────────── */
