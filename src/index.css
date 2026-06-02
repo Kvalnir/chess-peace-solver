@@ -49,10 +49,13 @@
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
 
-  /* Board cell: fills available width ÷ columns, min 40px max 68px */
+  /* Board cell: fills available width ÷ columns, min 40px, max --cell-max */
   /* Subtracts body padding (32px) + board-wrap padding (32px) + col gaps ((cols-1)×2px) + border (4px) */
   /* Simplifies to: (100vw - 66px) / cols - 2px */
-  --cell: clamp(40px, calc((100vw - 66px) / var(--board-cols, 5) - 2px), 68px);
+  /* --cell-max grows on tablets/desktops (see media queries below) so the
+     board scales up instead of staying phone-sized on big screens. */
+  --cell-max: 68px;
+  --cell: clamp(40px, calc((100vw - 66px) / var(--board-cols, 5) - 2px), var(--cell-max));
 }
 
 /* ── Document ───────────────────────────────────────────────── */
@@ -738,4 +741,44 @@ body {
   border-color: var(--teal);
   background: var(--teal-dim);
   color: var(--teal);
+}
+
+/* ============================================================
+   Responsive scaling — grow the whole UI on tablets & desktops
+   so it doesn't stay phone-sized on large screens.
+   Bumps: root font-size (scales all rem text), the board cell
+   max, the app container width, and the px-based control heights
+   so everything stays proportional.
+   ============================================================ */
+
+/* ── Tablets (portrait ~768px and up) ───────────────────────── */
+@media (min-width: 640px) {
+  :root { --cell-max: 96px; }
+  html { font-size: 16px; }
+  .app { max-width: 720px; }
+
+  .app-header h1   { font-size: 1.85rem; }
+  .size-btn        { width: 40px; height: 34px; }
+  .tool-btn        { height: 46px; }
+  .piece-btn       { height: 66px; }
+  .tray-piece-btn  { height: 42px; }
+  .mod-btn         { width: 44px; height: 32px; }
+  .btn-solve,
+  .btn-clear       { height: 56px; }
+}
+
+/* ── Large tablets / small desktops (1024px and up) ─────────── */
+@media (min-width: 1024px) {
+  :root { --cell-max: 120px; }
+  html { font-size: 17px; }
+  .app { max-width: 880px; }
+
+  .app-header h1   { font-size: 2.1rem; }
+  .size-btn        { width: 46px; height: 38px; }
+  .tool-btn        { height: 50px; }
+  .piece-btn       { height: 76px; }
+  .tray-piece-btn  { height: 48px; }
+  .mod-btn         { width: 48px; height: 36px; }
+  .btn-solve,
+  .btn-clear       { height: 60px; }
 }
