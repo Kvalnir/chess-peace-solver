@@ -102,7 +102,11 @@ export default function Board({
       ref={gridRef}
       className="board-grid"
       role="grid"
-      style={{ "--board-cols": boardCols, gridTemplateColumns: `repeat(${boardCols}, var(--cell))` }}
+      style={{
+        "--board-cols": boardCols,
+        "--cell": `clamp(40px, calc((100vw - 66px) / ${boardCols} - 2px), 68px)`,
+        gridTemplateColumns: `repeat(${boardCols}, var(--cell))`,
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

@@ -151,12 +151,9 @@ body {
 
 .mode-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
-.mode-tabs::-webkit-scrollbar { display: none; }
 
 .mode-tab {
   flex-shrink: 0;
