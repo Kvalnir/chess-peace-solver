@@ -10,6 +10,7 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 
 - **All five puzzle modes** — Classic, Multiples, Two-Colour, Islands, Presets
 - **Tap-to-place & drag-paint** — touch-optimised board interaction
+- **Region outlines** — accessible squares get a teal boundary line wherever they meet a blocked square, so the playable area reads clearly at a glance
 - **Non-square boards** — set columns and rows independently (4–6)
 - **Smart staging tray** — auto-populated with one of each piece in Classic/Islands/Presets modes; stays in sync as you place and remove fixed pieces
 - **Preset squares** — mark positions with a circle (○) in Presets mode; every marked square must be occupied in the solution, but pieces may be placed anywhere on the board
@@ -119,15 +120,27 @@ chess-peace-solver/
 
 ---
 
+## Local Development
+
+Requires [Node.js](https://nodejs.org/) 18 or newer (CI builds on Node 24).
+
+```bash
+npm install      # install dependencies
+npm run dev      # start the Vite dev server with hot reload
+npm run build    # produce the production bundle in dist/
+npm run preview  # serve the built bundle locally to verify it
+```
+
+---
+
 ## Deploying Changes
 
-This repo uses GitHub Actions. Every file you commit to `main` automatically triggers a rebuild and redeploy — no local tools needed.
+This repo uses GitHub Actions (`.github/workflows/deploy.yml`). Every push to `main` automatically triggers a rebuild and redeploy — no local tools needed.
 
 To update the live app:
-1. Edit any file directly on GitHub (click the file → pencil icon)
-2. Commit to `main`
-3. Wait ~60 seconds for the Actions workflow to complete
-4. The live URL updates automatically
+1. Commit a change to `main` (edit locally and push, or edit a file directly on GitHub via the pencil icon)
+2. Wait ~60 seconds for the Actions workflow to build and deploy
+3. The live URL updates automatically
 
 ---
 

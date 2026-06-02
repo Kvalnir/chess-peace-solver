@@ -281,7 +281,7 @@ export default function App() {
         mode={mode}
       />
 
-      <div className="divider" style={{ margin: "4px 0" }} />
+      <div className="divider" />
 
       <StagingTray
         stagedCounts={stagedCounts}

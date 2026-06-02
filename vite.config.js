@@ -16,7 +16,7 @@ export default defineConfig({
 
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icons/*.png"],
+      includeAssets: ["icons/*.png", "icons/icon.svg"],
 
       manifest: {
         name: "Chess Peace Solver",

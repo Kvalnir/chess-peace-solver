@@ -1,6 +1,4 @@
-import { PIECE_SYMBOLS, ALL_KINDS } from "../solver/engine.js";
-
-const KIND_LABELS = { K:"King", Q:"Queen", R:"Rook", B:"Bishop", N:"Knight", P:"Pawn" };
+import { PIECE_SYMBOLS, PIECE_NAMES, ALL_KINDS } from "../solver/engine.js";
 
 export default function Controls({
   activeTool, onToolChange,
@@ -57,7 +55,7 @@ export default function Controls({
               key={kind}
               className={`piece-btn${selectedKind === kind ? (isBlack ? " active black" : " active") : ""}`}
               onClick={() => onKindChange(kind)}
-              aria-label={KIND_LABELS[kind]}
+              aria-label={PIECE_NAMES[kind]}
             >
               <span aria-hidden="true">{PIECE_SYMBOLS[selectedColour + kind]}</span>
               <span className="piece-label">{kind}</span>
