@@ -150,24 +150,26 @@ body {
 }
 
 .mode-tabs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 4px;
+  /* gridTemplateColumns set inline via style prop */
 }
 
 .mode-tab {
-  flex-shrink: 0;
-  padding: 5px 11px;
+  padding: 5px 4px;
   border-radius: 6px;
   border: 1px solid transparent;
   background: var(--panel);
   color: var(--sub);
   font-family: var(--font-ui);
-  font-size: 0.72rem;
+  font-size: 0.63rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
   user-select: none;
 }
 .mode-tab.active {
@@ -297,6 +299,18 @@ body {
 .board-cell.hovering {
   background: rgba(45,212,191,0.08) !important;
 }
+
+/* Boundary edges: thin lines on accessible cells adjacent to blocked cells */
+.bnd {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  background: rgba(200, 215, 235, 0.28);
+}
+.bnd-t { top: 0;    left: 0; right: 0;  height: 2px; }
+.bnd-b { bottom: 0; left: 0; right: 0;  height: 2px; }
+.bnd-l { top: 0; bottom: 0; left: 0;    width:  2px; }
+.bnd-r { top: 0; bottom: 0; right: 0;   width:  2px; }
 
 /* Coordinate labels (optional, shown at col 0 and last row) */
 .board-cell .coord {

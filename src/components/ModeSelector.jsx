@@ -6,7 +6,12 @@
 export default function ModeSelector({ modes, active, hint, onChange }) {
   return (
     <div className="mode-selector">
-      <div className="mode-tabs" role="tablist" aria-label="Game mode">
+      <div
+        className="mode-tabs"
+        role="tablist"
+        aria-label="Game mode"
+        style={{ gridTemplateColumns: `repeat(${modes.length}, 1fr)` }}
+      >
         {modes.map((mode) => (
           <button
             key={mode}
