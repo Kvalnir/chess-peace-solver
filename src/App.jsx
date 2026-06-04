@@ -17,6 +17,18 @@ const MODE_HINTS = {
 
 const SIZES = [4, 5, 6];
 
+// ── Theme switcher ──────────────────────────────────────────────
+// Cycle order shown on the header button: dark → light → system → dark.
+const THEME_NEXT  = { dark: "light", light: "system", system: "dark" };
+const THEME_ICON  = { dark: "🌙", light: "☀️", system: "🖥️" };
+const THEME_LABEL = { dark: "Dark", light: "Light", system: "System" };
+const THEME_BG    = { dark: "#080c10", light: "#e8ebef" };
+
+const getStoredTheme = () => {
+  try { return localStorage.getItem("theme") || "system"; }
+  catch { return "system"; }
+};
+
 // Modes that auto-populate the staging tray with 1 of each piece
 const AUTO_TRAY_MODES = ["Classic", "Islands", "Presets"];
 
@@ -40,6 +52,8 @@ export default function App() {
   const [solving,   setSolving]   = useState(false);
   const [solution,  setSolution]  = useState(null);
   const [resultMsg, setResultMsg] = useState(null);
+
+  const [theme, setTheme] = useState(getStoredTheme);
 
   const workerRef     = useRef(null);
   const requestIdRef  = useRef(0);
@@ -69,6 +83,29 @@ export default function App() {
     };
     return () => workerRef.current?.terminate();
   }, []);
+
+  // ── Theme: apply choice, persist, keep PWA status-bar colour in sync ──
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "system") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", theme);
+    try { localStorage.setItem("theme", theme); } catch { /* ignore */ }
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncMeta = () => {
+      const dark = theme === "dark" || (theme === "system" && mq.matches);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", dark ? THEME_BG.dark : THEME_BG.light);
+    };
+    syncMeta();
+    // Only the System choice needs to react to OS changes (CSS handles the rest).
+    if (theme === "system") {
+      mq.addEventListener("change", syncMeta);
+      return () => mq.removeEventListener("change", syncMeta);
+    }
+  }, [theme]);
+
+  const cycleTheme = useCallback(() => setTheme(t => THEME_NEXT[t]), []);
 
   // ── Clip helpers ──────────────────────────────────────────────
   const clipCells = useCallback((rows, cols) => {
@@ -238,6 +275,14 @@ export default function App() {
       <header className="app-header">
         <h1>♟ Chess Peace</h1>
         <span className="tagline">Solver</span>
+        <button
+          className="theme-toggle"
+          onClick={cycleTheme}
+          title={`Theme: ${THEME_LABEL[theme]} (tap for ${THEME_LABEL[THEME_NEXT[theme]]})`}
+          aria-label={`Theme: ${THEME_LABEL[theme]}. Tap to switch to ${THEME_LABEL[THEME_NEXT[theme]]}.`}
+        >
+          <span aria-hidden="true">{THEME_ICON[theme]}</span>
+        </button>
       </header>
 
       <ModeSelector

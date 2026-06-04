@@ -9,6 +9,8 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 ## Features
 
 - **All five puzzle modes** — Classic, Multiples, Two-Colour, Islands, Presets
+- **Fits any window** — the whole UI always sizes to the viewport with no scrolling; the board grows to fill the space left over after the controls and rebalances on resize, orientation change, or when the result banner appears. If a screen is too small even at the minimum cell size, the page scrolls rather than clipping
+- **Light & dark themes** — follows your OS appearance by default; tap the header icon to cycle 🌙 Dark → ☀️ Light → 🖥️ System. Your choice is remembered, and the PWA status-bar colour matches the active theme
 - **Tap-to-place & drag-paint** — touch-optimised board interaction
 - **Region outlines** — accessible squares get a teal boundary line wherever they meet a blocked square, so the playable area reads clearly at a glance
 - **Non-square boards** — set columns and rows independently (4–6)
@@ -98,7 +100,7 @@ chess-peace-solver/
 │   │   └── ModeSelector.jsx       # Mode tabs
 │   ├── App.jsx                    # Root component & state
 │   ├── main.jsx                   # React entry point
-│   └── index.css                  # Obsidian dark theme
+│   └── index.css                  # Light + dark themes (light-dark() tokens)
 ├── index.html                     # iOS PWA meta tags
 ├── vite.config.js                 # Vite + PWA plugin config
 └── package.json
