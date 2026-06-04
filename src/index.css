@@ -49,17 +49,14 @@
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
 
-  /* Board cell: fills available width ÷ columns, min 40px, max --cell-max */
-  /* Subtracts body padding (32px) + board-wrap padding (32px) + col gaps ((cols-1)×2px) + border (4px) */
-  /* Simplifies to: (100vw - 66px) / cols - 2px */
-  /* --cell-max grows on tablets/desktops (see media queries below) so the
-     board scales up instead of staying phone-sized on big screens. */
-  --cell-max: 68px;
-  --cell: clamp(40px, calc((100vw - 66px) / var(--board-cols, 5) - 2px), var(--cell-max));
+  /* Board cell size is computed on .board-grid from the board area's actual
+     width AND height (container query units), so the whole UI fits the window
+     with no scrolling. See .board-area / .board-grid below. */
 }
 
 /* ── Document ───────────────────────────────────────────────── */
 html {
+  height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
@@ -70,37 +67,44 @@ html {
 }
 
 body {
-  min-height: 100vh;
-  min-height: 100dvh; /* dynamic viewport on iOS Safari */
+  height: 100%;
+  /* The whole UI is sized to fit the window — nothing scrolls. */
+  overflow: hidden;
   background: var(--bg);
   /* Full-bleed background with subtle noise texture */
   background-image:
     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,212,191,0.06) 0%, transparent 70%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  /* Padding for safe areas + extra horizontal margin so iOS edge-swipe doesn't compete with scrolling */
+}
+
+/* ── App shell ──────────────────────────────────────────────── */
+/* The viewport-height scroll container. Normally the UI fits and nothing
+   scrolls; if the board bottoms out at its minimum cell size and the content
+   still doesn't fit, this scrolls vertically instead of clipping. Safe-area +
+   edge padding lives here so it's inside the 100dvh box (box-sizing: border-box). */
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-top: var(--sat);
   padding-bottom: calc(var(--sab) + 8px);
   padding-left: max(var(--sal), 16px);
   padding-right: max(var(--sar), 16px);
 }
 
-/* ── App shell ──────────────────────────────────────────────── */
-#root {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
 .app {
   width: 100%;
   max-width: 520px;
+  /* Fill the viewport when content fits; grow past it (→ #root scrolls) when
+     everything is at its minimum and still doesn't fit. */
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0;
-  padding-bottom: 16px;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -183,13 +187,36 @@ body {
 .mode-tab:active { opacity: 0.7; }
 
 /* ── Board area ─────────────────────────────────────────────── */
+/* board-wrap grows to absorb all leftover vertical space; the board itself
+   is the single flex-grow element so the rest of the UI keeps its natural
+   size and nothing scrolls. */
 .board-wrap {
   width: 100%;
+  flex: 1 1 0;
+  /* min-height stays auto so the board's minimum (below) propagates up and
+     forces a scroll rather than being shrunk away. */
   padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+/* Holds the board and supplies the container the grid measures itself
+   against. container-type: size means cqw/cqh resolve to this box's content
+   size — which flexbox has already determined, independent of the grid. */
+.board-area {
+  flex: 1 1 0;
+  /* Floor matching the 24px minimum cell (see .board-grid --cell): rows×24px
+     + gaps + 2px border each side. Reserves room when fitting and, once hit,
+     makes the page scroll instead of shrinking the board to nothing.
+     --board-rows is set inline on this element in App.jsx. */
+  min-height: calc(var(--board-rows, 5) * 24px + (var(--board-rows, 5) - 1) * 2px + 4px);
+  min-width: 0;
+  width: 100%;
+  container-type: size;
+  display: grid;
+  place-items: center;
 }
 
 .board-size-row {
@@ -222,9 +249,17 @@ body {
 
 /* ── Board grid ─────────────────────────────────────────────── */
 .board-grid {
+  /* Square cell sized to the largest that fits the board area in BOTH axes.
+     100cqw/100cqh = board-area width/height; subtract (n-1)×2px gaps and the
+     2px border on each side. --board-cols/--board-rows are set in Board.jsx. */
+  --cell: max(24px, min(
+    calc((100cqw - (var(--board-cols) - 1) * 2px - 4px) / var(--board-cols)),
+    calc((100cqh - (var(--board-rows) - 1) * 2px - 4px) / var(--board-rows))
+  ));
   display: grid;
   gap: 2px;
-  /* Columns set inline via style={{ gridTemplateColumns }} */
+  grid-template-columns: repeat(var(--board-cols), var(--cell));
+  grid-template-rows:    repeat(var(--board-rows), var(--cell));
   touch-action: none; /* prevent scroll during drag-paint */
   user-select: none;
   border: 2px solid var(--border-2);
@@ -640,10 +675,22 @@ body {
   margin: 4px 0;
 }
 
-/* ── Scrollable hint ────────────────────────────────────────── */
-@media (max-height: 700px) {
-  .board-wrap { padding-top: 10px; padding-bottom: 8px; }
+/* ── Short screens: trim vertical chrome so the board keeps room ─── */
+@media (max-height: 820px) {
+  .board-wrap   { padding-top: 12px; padding-bottom: 8px; gap: 8px; }
+  .mode-selector { padding-top: 8px; padding-bottom: 6px; }
   .controls-panel { gap: 8px; }
+  .tray-card    { padding: 8px 12px; gap: 6px; }
+  .action-row   { padding: 8px 16px 2px; }
+}
+
+@media (max-height: 700px) {
+  .app-header   { padding: 8px 16px 6px; }
+  .board-wrap   { padding-top: 8px; padding-bottom: 6px; gap: 6px; }
+  .controls-panel { gap: 6px; }
+  .tray-card    { padding: 6px 12px; gap: 5px; }
+  .btn-solve,
+  .btn-clear    { height: 42px; }
 }
 
 /* ============================================================
@@ -753,7 +800,6 @@ body {
 
 /* ── Tablets (portrait ~768px and up) ───────────────────────── */
 @media (min-width: 640px) {
-  :root { --cell-max: 96px; }
   html { font-size: 16px; }
   .app { max-width: 720px; }
 
@@ -769,7 +815,6 @@ body {
 
 /* ── Large tablets / small desktops (1024px and up) ─────────── */
 @media (min-width: 1024px) {
-  :root { --cell-max: 120px; }
   html { font-size: 17px; }
   .app { max-width: 880px; }
 

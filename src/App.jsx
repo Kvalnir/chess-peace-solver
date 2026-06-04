@@ -259,16 +259,18 @@ export default function App() {
           ))}
         </div>
 
-        <Board
-          boardRows={boardRows}
-          boardCols={boardCols}
-          cells={cells}
-          solutionMap={solutionMap}
-          activeTool={activeTool}
-          selectedKind={selectedKind}
-          selectedColour={selectedColour}
-          onCellAction={handleCellAction}
-        />
+        <div className="board-area" style={{ "--board-rows": boardRows }}>
+          <Board
+            boardRows={boardRows}
+            boardCols={boardCols}
+            cells={cells}
+            solutionMap={solutionMap}
+            activeTool={activeTool}
+            selectedKind={selectedKind}
+            selectedColour={selectedColour}
+            onCellAction={handleCellAction}
+          />
+        </div>
       </div>
 
       <Controls

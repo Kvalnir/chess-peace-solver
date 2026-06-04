@@ -114,8 +114,7 @@ export default function Board({
       role="grid"
       style={{
         "--board-cols": boardCols,
-        "--cell": `clamp(40px, calc((100vw - 66px) / ${boardCols} - 2px), 68px)`,
-        gridTemplateColumns: `repeat(${boardCols}, var(--cell))`,
+        "--board-rows": boardRows,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
