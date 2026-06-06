@@ -78,14 +78,26 @@ export default function Board({
       if (isBlocked(r, c + 1)) fills.push(<div key="r" className="blk-fill blk-r" />);
       content = fills.length ? <>{fills}</> : null;
 
-    } else if (solPiece) {
-      cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
-      content = <span className="piece-glyph">{solPiece.symbol}</span>;
-    } else if (cellData?.type === "preset") {
-      cls += " preset";
-    } else if (cellData?.type === "fixed") {
-      cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
-      content = <span className="piece-glyph">{PIECE_SYMBOLS[cellData.colour + cellData.kind]}</span>;
+    } else {
+      // Teal boundary lines outlining each island of accessible squares:
+      // drawn on sides adjacent to a blocked cell.
+      const edges = [];
+      if (isBlocked(r - 1, c)) edges.push(<div key="t" className="bnd bnd-t" />);
+      if (isBlocked(r + 1, c)) edges.push(<div key="b" className="bnd bnd-b" />);
+      if (isBlocked(r, c - 1)) edges.push(<div key="l" className="bnd bnd-l" />);
+      if (isBlocked(r, c + 1)) edges.push(<div key="r" className="bnd bnd-r" />);
+
+      let glyph = null;
+      if (solPiece) {
+        cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
+        glyph = <span className="piece-glyph">{solPiece.symbol}</span>;
+      } else if (cellData?.type === "preset") {
+        cls += " preset";
+      } else if (cellData?.type === "fixed") {
+        cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
+        glyph = <span className="piece-glyph">{PIECE_SYMBOLS[cellData.colour + cellData.kind]}</span>;
+      }
+      content = <>{edges}{glyph}</>;
     }
 
     return (
