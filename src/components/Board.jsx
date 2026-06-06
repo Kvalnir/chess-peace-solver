@@ -55,6 +55,10 @@ export default function Board({
 
   const handlePointerUp = useCallback(() => { paintRef.current = null; }, []);
 
+  const isBlocked = (r, c) =>
+    r >= 0 && r < boardRows && c >= 0 && c < boardCols &&
+    cells[`${r},${c}`]?.type === "blocked";
+
   const renderCell = (r, c) => {
     const cellKey  = `${r},${c}`;
     const cellData = cells[cellKey];
@@ -65,6 +69,14 @@ export default function Board({
 
     if (cellData?.type === "blocked") {
       cls += " blocked";
+      // Fill the grid gap toward neighbouring blocked cells so a connected
+      // blocked region reads as one solid mass instead of separate squares.
+      const fills = [];
+      if (isBlocked(r - 1, c)) fills.push(<div key="t" className="blk-fill blk-t" />);
+      if (isBlocked(r + 1, c)) fills.push(<div key="b" className="blk-fill blk-b" />);
+      if (isBlocked(r, c - 1)) fills.push(<div key="l" className="blk-fill blk-l" />);
+      if (isBlocked(r, c + 1)) fills.push(<div key="r" className="blk-fill blk-r" />);
+      content = fills.length ? <>{fills}</> : null;
 
     } else if (solPiece) {
       cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;

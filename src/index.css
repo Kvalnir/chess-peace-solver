@@ -360,6 +360,20 @@ body {
   cursor: pointer;
 }
 
+/* Fill the 2px grid gap between adjacent blocked cells so a connected
+   blocked region renders as one solid mass. Each filler covers the gap on
+   one side; top/bottom extend into the corners so junctions stay seamless. */
+.blk-fill {
+  position: absolute;
+  background: var(--sq-blocked);
+  pointer-events: none;
+  z-index: 1;
+}
+.blk-t { top:    -2px; left: -2px; right:  -2px; height: 2px; }
+.blk-b { bottom: -2px; left: -2px; right:  -2px; height: 2px; }
+.blk-l { left:   -2px; top:  0;    bottom: 0;    width:  2px; }
+.blk-r { right:  -2px; top:  0;    bottom: 0;    width:  2px; }
+
 .board-cell.fixed-piece .piece-glyph {
   color: var(--amber);
   filter: drop-shadow(0 0 6px var(--amber-glow));
