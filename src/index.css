@@ -66,6 +66,8 @@
   /* Board squares */
   --sq-light:  light-dark(#eceff3, #1c2128);
   --sq-dark:   light-dark(#dde3e9, #161b22);
+  /* Blocked squares invert the theme: dark in light mode, light in dark mode */
+  --sq-blocked: light-dark(#080c10, #e8ebef);
 
   /* Typography */
   --font-ui:    'JetBrains Mono', 'Courier New', monospace;
@@ -354,7 +356,7 @@ body {
 
 /* States */
 .board-cell.blocked {
-  background: var(--bg) !important;
+  background: var(--sq-blocked) !important;
   color: var(--border-2);
   font-size: calc(var(--cell) * 0.38);
   cursor: pointer;
