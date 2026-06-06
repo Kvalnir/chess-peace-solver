@@ -1,11 +1,13 @@
 import { PIECE_SYMBOLS, ALL_KINDS } from "../solver/engine.js";
 
 export default function StagingTray({
-  stagedCounts, trayMode, onTrayModeChange, onPieceClick, showBlackRow,
+  stagedCounts, trayMode, onTrayModeChange, onPieceClick, onClear, showBlackRow,
 }) {
   const rows = showBlackRow
     ? [{ colour: "W", label: "W" }, { colour: "B", label: "B" }]
     : [{ colour: "W", label: "" }];
+
+  const hasStaged = Object.values(stagedCounts).some((c) => c > 0);
 
   return (
     <div className="staging-tray">
@@ -13,15 +15,23 @@ export default function StagingTray({
         {/* Header */}
         <div className="tray-header">
           <span className="tray-title">📦 Staging Tray</span>
-          <div className="tray-modifier">
-            {[{ value: "add", icon: "+" }, { value: "sub", icon: "−" }].map(({ value, icon }) => (
-              <button
-                key={value}
-                className={`mod-btn${trayMode === value ? " active" : ""}`}
-                onClick={() => onTrayModeChange(value)}
-                aria-label={value === "add" ? "Add mode" : "Remove mode"}
-              >{icon}</button>
-            ))}
+          <div className="tray-header-actions">
+            <button
+              className="tray-clear-btn"
+              onClick={onClear}
+              disabled={!hasStaged}
+              aria-label="Clear all staged pieces"
+            >Clear</button>
+            <div className="tray-modifier">
+              {[{ value: "add", icon: "+" }, { value: "sub", icon: "−" }].map(({ value, icon }) => (
+                <button
+                  key={value}
+                  className={`mod-btn${trayMode === value ? " active" : ""}`}
+                  onClick={() => onTrayModeChange(value)}
+                  aria-label={value === "add" ? "Add mode" : "Remove mode"}
+                >{icon}</button>
+              ))}
+            </div>
           </div>
         </div>
 

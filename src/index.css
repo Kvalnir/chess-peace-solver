@@ -570,6 +570,38 @@ body {
   text-transform: uppercase;
 }
 
+.tray-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tray-clear-btn {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--sub);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.tray-clear-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--sub);
+}
+.tray-clear-btn:active:not(:disabled) { transform: scale(0.94); }
+.tray-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .tray-modifier {
   display: flex;
   gap: 3px;

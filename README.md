@@ -62,6 +62,7 @@ The tray holds pieces for the solver to auto-place.
 
 - **`+` mode** — tap a piece icon to queue one copy
 - **`−` mode** — tap a piece icon to remove one copy
+- **Clear** — empties the tray in one tap, leaving the board and tools untouched
 - In Classic / Islands / Presets modes, the tray starts with one of each piece and stays in sync with fixed pieces placed on the board
 - Amber count = White pieces queued · Violet count = Black pieces queued *(Two-Colour mode)*
 

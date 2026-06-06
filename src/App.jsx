@@ -241,6 +241,12 @@ export default function App() {
     });
   }, [trayMode]);
 
+  // Empty the staging tray without touching the board or board setup.
+  const handleClearStaged = useCallback(() => {
+    setStaged([]);
+    setSolution(null); setResultMsg(null);
+  }, []);
+
   const stagedCounts = (() => {
     const counts = {};
     for (const { kind, colour } of staged) {
@@ -336,6 +342,7 @@ export default function App() {
         trayMode={trayMode}
         onTrayModeChange={setTrayMode}
         onPieceClick={handleTrayClick}
+        onClear={handleClearStaged}
         showBlackRow={showBlackRow}
       />
 
