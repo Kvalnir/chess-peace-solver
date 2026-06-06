@@ -69,8 +69,8 @@
   /* Board squares */
   --sq-light:  light-dark(#eceff3, #1c2128);
   --sq-dark:   light-dark(#dde3e9, #161b22);
-  /* Blocked squares invert the theme: dark in light mode, light in dark mode */
-  --sq-blocked: light-dark(#080c10, #e8ebef);
+  /* Blocked squares are dark grey in both themes */
+  --sq-blocked: light-dark(#4b525c, #3d444d);
 
   /* Typography */
   --font-ui:    'JetBrains Mono', 'Courier New', monospace;
