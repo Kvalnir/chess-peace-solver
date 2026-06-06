@@ -55,10 +55,6 @@ export default function Board({
 
   const handlePointerUp = useCallback(() => { paintRef.current = null; }, []);
 
-  const isBlocked = (r, c) =>
-    r >= 0 && r < boardRows && c >= 0 && c < boardCols &&
-    cells[`${r},${c}`]?.type === "blocked";
-
   const renderCell = (r, c) => {
     const cellKey  = `${r},${c}`;
     const cellData = cells[cellKey];
@@ -69,28 +65,15 @@ export default function Board({
 
     if (cellData?.type === "blocked") {
       cls += " blocked";
-      content = <span style={{ fontSize: "0.6em", opacity: 0.5 }}>▪</span>;
 
-    } else {
-      // Boundary edges: thin lines on sides adjacent to blocked cells
-      const edges = [];
-      if (isBlocked(r - 1, c)) edges.push(<div key="t" className="bnd bnd-t" />);
-      if (isBlocked(r + 1, c)) edges.push(<div key="b" className="bnd bnd-b" />);
-      if (isBlocked(r, c - 1)) edges.push(<div key="l" className="bnd bnd-l" />);
-      if (isBlocked(r, c + 1)) edges.push(<div key="r" className="bnd bnd-r" />);
-
-      if (solPiece) {
-        cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
-        content = <>{edges}<span className="piece-glyph">{solPiece.symbol}</span></>;
-      } else if (cellData?.type === "preset") {
-        cls += " preset";
-        content = <>{edges}<span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span></>;
-      } else if (cellData?.type === "fixed") {
-        cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
-        content = <>{edges}<span className="piece-glyph">{PIECE_SYMBOLS[cellData.colour + cellData.kind]}</span></>;
-      } else {
-        content = <>{edges}<span aria-hidden="true" style={{ color: "transparent", fontSize: "4px" }}>·</span></>;
-      }
+    } else if (solPiece) {
+      cls += ` solution-piece${solPiece.colour === "B" ? " black" : ""}`;
+      content = <span className="piece-glyph">{solPiece.symbol}</span>;
+    } else if (cellData?.type === "preset") {
+      cls += " preset";
+    } else if (cellData?.type === "fixed") {
+      cls += ` fixed-piece${cellData.colour === "B" ? " black" : ""}`;
+      content = <span className="piece-glyph">{PIECE_SYMBOLS[cellData.colour + cellData.kind]}</span>;
     }
 
     return (
