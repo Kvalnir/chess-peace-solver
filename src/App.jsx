@@ -65,8 +65,10 @@ export default function App() {
       { type: "module" }
     );
     workerRef.current.onmessage = ({ data }) => {
+      const { solution: sol, error, requestId } = data;
+      // Ignore responses from solves that were superseded or cleared.
+      if (requestId !== requestIdRef.current) return;
       const elapsed = Math.round(performance.now() - solveStartRef.current);
-      const { solution: sol, error } = data;
       setSolving(false);
       if (error) {
         setResultMsg({ kind: "warning", text: `Engine error: ${error}` });
@@ -262,6 +264,7 @@ export default function App() {
 
   // ── Clear — resets to block tool and repopulates tray ─────────
   const handleClear = useCallback(() => {
+    requestIdRef.current++; // discard any in-flight solve's response
     setCells({});
     setStaged(AUTO_TRAY_MODES.includes(mode) ? defaultStaged() : []);
     setSolution(null); setResultMsg(null); setSolving(false);
@@ -311,8 +314,6 @@ export default function App() {
             cells={cells}
             solutionMap={solutionMap}
             activeTool={activeTool}
-            selectedKind={selectedKind}
-            selectedColour={selectedColour}
             onCellAction={handleCellAction}
           />
         </div>

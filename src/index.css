@@ -1,6 +1,6 @@
 /* ============================================================
    Chess Peace Solver — Global Styles
-   Theme: Obsidian Dark (Theme A)
+   Themes: light + dark via light-dark() tokens (follows OS by default)
    Fonts: Crimson Pro (title) + JetBrains Mono (UI)
    ============================================================ */
 
@@ -17,7 +17,7 @@
    chosen by `color-scheme` (set on :root below) — so "follow the OS" is the
    default and a manual choice just overrides color-scheme. Dark values are the
    original Obsidian palette; light values are darkened/lightened complements
-   chosen for legibility on light surfaces (see VERIFY notes in the plan). */
+   chosen for legibility on light surfaces (≥4.5:1 text contrast). */
 :root {
   /* Default: follow the OS. data-theme overrides force a scheme (see below). */
   color-scheme: light dark;
@@ -38,6 +38,9 @@
   --teal-glow: light-dark(rgba(15,118,110,0.25),    rgba(45,212,191,0.35));
   --amber:     light-dark(#b45309,                  #fbbf24);
   --amber-dim: light-dark(rgba(180,83,9,0.12),      rgba(251,191,36,0.15));
+  --violet:      light-dark(#6d28d9,                #c084fc);
+  --violet-dim:  light-dark(rgba(109,40,217,0.12),  rgba(192,132,252,0.15));
+  --violet-glow: light-dark(rgba(109,40,217,0.25),  rgba(192,132,252,0.35));
   --sky:       light-dark(#0369a1,                  #38bdf8);
   --sky-dim:   light-dark(rgba(3,105,161,0.12),     rgba(56,189,248,0.15));
   --red:       light-dark(#dc2626,                  #f85149);
@@ -427,17 +430,6 @@ body {
 .bnd-l { left:   -1px; top:  -1px; bottom: -1px; width:  2px; }
 .bnd-r { right:  -1px; top:  -1px; bottom: -1px; width:  2px; }
 
-/* Coordinate labels (optional, shown at col 0 and last row) */
-.board-cell .coord {
-  position: absolute;
-  bottom: 2px;
-  right: 3px;
-  font-size: 9px;
-  color: var(--border-2);
-  font-weight: 700;
-  pointer-events: none;
-}
-
 /* ── Controls panel ─────────────────────────────────────────── */
 .controls-panel {
   width: 100%;
@@ -769,15 +761,8 @@ body {
 }
 
 /* ============================================================
-   ADDITIONS: Black piece colour system + rect board size UI
+   Black piece colour system (violet) + preset / size-label UI
    ============================================================ */
-
-/* ── Violet colour tokens for Black pieces ──────────────────── */
-:root {
-  --violet:      light-dark(#6d28d9,                #c084fc);
-  --violet-dim:  light-dark(rgba(109,40,217,0.12),  rgba(192,132,252,0.15));
-  --violet-glow: light-dark(rgba(109,40,217,0.25),  rgba(192,132,252,0.35));
-}
 
 /* ── Board cells — Black fixed pieces ───────────────────────── */
 .board-cell.fixed-piece.black .piece-glyph {

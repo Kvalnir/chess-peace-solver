@@ -3,7 +3,7 @@ import { PIECE_SYMBOLS } from "../solver/engine.js";
 
 export default function Board({
   boardRows, boardCols, cells, solutionMap,
-  activeTool, selectedKind, selectedColour, onCellAction,
+  activeTool, onCellAction,
 }) {
   const gridRef  = useRef(null);
   const paintRef = useRef(null);

@@ -14,8 +14,7 @@ export const PIECE_SYMBOLS = {
 
 export const PIECE_WEIGHTS = { Q: 6, R: 5, B: 4, K: 3, N: 2, P: 1 };
 
-export const ALL_KINDS   = ["K", "Q", "R", "B", "N", "P"];
-export const ALL_COLOURS = ["W", "B"];
+export const ALL_KINDS = ["K", "Q", "R", "B", "N", "P"];
 
 const coordKey = (r, c) => (r << 4) | c;
 
