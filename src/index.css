@@ -130,11 +130,15 @@ body {
   height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
-  /* iOS standalone PWAs auto-scroll after late layout shifts (e.g. the
-     web-font swap reflowing the header), which can scroll the mode
-     selector up behind the sticky header on first launch. */
+  /* Defensive: never let the browser auto-scroll this container after a
+     late layout shift (e.g. web-font swap). */
   overflow-anchor: none;
-  padding-top: var(--sat);
+  /* NO top padding here — the top safe-area inset lives inside .app-header
+     (see below). Padding the scroller AND offsetting the sticky header by
+     --sat double-applies the inset on iOS standalone: WebKit anchors sticky
+     offsets to the scroller's content edge (inside this padding), so the
+     header rendered --sat too low and sat exactly on top of the mode
+     selector. Only happened in portrait PWA, where --sat > 0. */
   padding-bottom: calc(var(--sab) + 8px);
   padding-left: max(var(--sal), 16px);
   padding-right: max(var(--sar), 16px);
@@ -155,7 +159,12 @@ body {
 /* ── Header ─────────────────────────────────────────────────── */
 .app-header {
   width: 100%;
-  padding: 14px 16px 10px;
+  /* The top safe-area inset is absorbed by the header's own padding, so the
+     blurred header extends up under the iOS status bar / Dynamic Island.
+     Never offset the header itself by --sat (sticky or relative top) — that
+     shifts it down over the mode selector in standalone mode. */
+  --header-pad-top: 14px;
+  padding: calc(var(--header-pad-top) + var(--sat)) 16px 10px;
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -163,8 +172,8 @@ body {
   background: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  position: relative;
-  top: var(--sat);
+  position: sticky;
+  top: 0;
   z-index: 10;
 }
 
@@ -841,7 +850,9 @@ body {
 }
 
 @media (max-height: 700px) {
-  .app-header   { padding: 8px 16px 6px; }
+  /* Trim via the custom property so the safe-area term in the header's
+     padding calc survives. */
+  .app-header   { --header-pad-top: 8px; padding-bottom: 6px; }
   .board-wrap   { padding-top: 8px; padding-bottom: 6px; gap: 6px; }
   .controls-panel { gap: 6px; }
   .tray-card    { padding: 6px 12px; gap: 5px; }
