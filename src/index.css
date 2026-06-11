@@ -163,7 +163,7 @@ body {
   background: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  position: sticky;
+  position: relative;
   top: var(--sat);
   z-index: 10;
 }
