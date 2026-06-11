@@ -130,6 +130,10 @@ body {
   height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
+  /* iOS standalone PWAs auto-scroll after late layout shifts (e.g. the
+     web-font swap reflowing the header), which can scroll the mode
+     selector up behind the sticky header on first launch. */
+  overflow-anchor: none;
   padding-top: var(--sat);
   padding-bottom: calc(var(--sab) + 8px);
   padding-left: max(var(--sal), 16px);
