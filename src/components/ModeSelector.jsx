@@ -25,18 +25,8 @@ export default function ModeSelector({ modes, active, hint, onChange }) {
         ))}
       </div>
 
-      {hint && (
-        <p
-          style={{
-            fontSize: "0.68rem",
-            color: "var(--sub)",
-            marginTop: "6px",
-            lineHeight: 1.45,
-          }}
-        >
-          {hint}
-        </p>
-      )}
+      {/* key remounts the hint on mode change so it fades in */}
+      {hint && <p className="mode-hint" key={active}>{hint}</p>}
     </div>
   );
 }

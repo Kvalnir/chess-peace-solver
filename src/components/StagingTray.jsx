@@ -62,7 +62,7 @@ export default function StagingTray({
           );
         })}
 
-        <p style={{ fontSize: "0.66rem", color: "var(--sub)", margin: 0, lineHeight: 1.4 }}>
+        <p className="tray-hint">
           {trayMode === "add" ? "Tap a piece to queue it for auto-placement." : "Tap a piece to remove one from the queue."}
         </p>
       </div>

@@ -16,8 +16,9 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 - **Non-square boards** — set columns and rows independently (4–6)
 - **Smart staging tray** — auto-populated with one of each piece in Classic/Islands/Presets modes; stays in sync as you place and remove fixed pieces
 - **Preset squares** — mark positions with a circle (○) in Presets mode; every marked square must be occupied in the solution, but pieces may be placed anywhere on the board
-- **WebWorker solver** — runs off the main thread so the UI never freezes
+- **WebWorker solver** — runs off the main thread so the UI never freezes; the Solve button doubles as **Cancel** while a search is running, and any board edit mid-solve discards the stale search automatically
 - **Solve time display** — shows compute time in milliseconds
+- **Animated reveal** — solution pieces pop onto the board one by one (honours your OS reduced-motion setting)
 - **Offline capable** — works without an internet connection once installed
 - **iOS PWA** — install via Safari → Share → Add to Home Screen
 
@@ -33,7 +34,7 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 4. **Switch to Preset tool** *(Presets mode only)* — mark squares where pieces must go
 5. **Switch to Place tool** — fix any pieces at known positions
 6. **Check the staging tray** — adjust counts if needed
-7. **Tap Solve** — solution appears on the board in teal
+7. **Tap Solve** — solution pieces appear on the board (amber for White, violet for Black); tap again mid-search to cancel
 
 ### Board tools
 
@@ -41,7 +42,7 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 |---|---|
 | **✦ Place** | Tap empty square to place selected piece · Tap piece again to remove |
 | **█ Block** | Tap to mark a square inaccessible · Tap again to unblock |
-| **○ Preset** | *(Presets mode only)* Tap to mark a position that must contain a piece · Tap again to unmark |
+| **○ Preset** | *(Presets mode only)* Tap to mark a position that must contain a piece · Tap again to unmark · Placing a piece or block on a marker hides it; removing them restores it |
 | **✕ Erase** | Tap anything to remove it |
 
 **Drag-paint:** Hold and drag across squares to apply the same action to multiple squares at once.
@@ -153,6 +154,7 @@ The engine is a direct JavaScript port of the original Python notebook:
 
 - **Backtracking search** with early constraint pruning
 - **Heuristic ordering** — heavier pieces placed first (Q → R → B → K → N → P) to fail fast
+- **Symmetry breaking** — identical pieces (same kind and colour) are forced into increasing board order, pruning the redundant permutations of *k* copies down to one — a large speedup in Multiples mode
 - **Precomputed ray cache** — all sliding-piece attack lines built once at board initialisation for O(1) lookup during search
 - **Island BFS** — flood-fill assigns each accessible square an island ID; threats are filtered to same-island pairs in Islands mode
 - **Two-colour exemption** — same-colour pieces skip the threat check entirely

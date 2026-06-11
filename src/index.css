@@ -65,6 +65,7 @@
   /* Surfaces that are translucent / shadowed (replace inline rgba) */
   --header-bg:     light-dark(rgba(243,245,248,0.85), rgba(8,12,16,0.85));
   --board-shadow:  light-dark(rgba(15,23,42,0.14),    rgba(0,0,0,0.6));
+  --bg-glow:       light-dark(rgba(15,118,110,0.05),  rgba(45,212,191,0.06));
 
   /* Board squares */
   --sq-light:  light-dark(#eceff3, #1c2128);
@@ -113,7 +114,7 @@ body {
   background: var(--bg);
   /* Full-bleed background with subtle noise texture */
   background-image:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,212,191,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, var(--bg-glow) 0%, transparent 70%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
@@ -213,6 +214,7 @@ body {
   text-transform: uppercase;
   margin-bottom: 6px;
 }
+.section-label.flush { margin-bottom: 0; }
 
 /* ── Mode selector ──────────────────────────────────────────── */
 .mode-selector {
@@ -251,6 +253,18 @@ body {
   border-color: var(--teal-border);
 }
 .mode-tab:active { opacity: 0.7; }
+
+.mode-hint {
+  font-size: 0.68rem;
+  color: var(--sub);
+  margin-top: 6px;
+  line-height: 1.45;
+  animation: hintFade 0.25s ease;
+}
+@keyframes hintFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 /* ── Board area ─────────────────────────────────────────────── */
 /* board-wrap grows to absorb all leftover vertical space; the board itself
@@ -380,6 +394,7 @@ body {
 .board-cell.fixed-piece .piece-glyph {
   color: var(--amber);
   filter: drop-shadow(0 0 6px var(--amber-glow));
+  animation: piecePop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .board-cell.fixed-piece::after {
   content: '';
@@ -391,9 +406,12 @@ body {
   pointer-events: none;
 }
 
+/* Solution pieces reveal one by one — --d is the per-piece stagger delay
+   set inline in Board.jsx; `backwards` keeps them hidden until their turn. */
 .board-cell.solution-piece .piece-glyph {
   color: var(--amber);
   filter: drop-shadow(0 0 8px var(--amber-glow));
+  animation: piecePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) backwards;
 }
 .board-cell.solution-piece::after {
   content: '';
@@ -403,7 +421,7 @@ body {
   border: 2px solid var(--amber-line);
   border-radius: 0;
   pointer-events: none;
-  animation: solveFlash 0.4s ease-out;
+  animation: solveFlash 0.4s ease-out var(--d, 0ms) backwards;
 }
 
 @keyframes solveFlash {
@@ -412,8 +430,10 @@ body {
   100% { opacity: 1; transform: scale(1); }
 }
 
-.board-cell.hovering {
-  background: var(--teal-soft) !important;
+@keyframes piecePop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  70%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* Teal boundary lines outlining each island of accessible squares.
@@ -668,6 +688,13 @@ body {
 .tray-piece-btn.has-pieces .tray-cnt { color: var(--amber); }
 .tray-piece-btn:active { transform: scale(0.94); }
 
+.tray-hint {
+  font-size: 0.66rem;
+  color: var(--sub);
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* ── Action buttons ─────────────────────────────────────────── */
 .action-row {
   width: 100%;
@@ -697,21 +724,38 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(45,212,191,0.1));
+  background: linear-gradient(135deg, transparent 40%, var(--teal-soft));
 }
 .btn-solve:hover {
   background: var(--teal-glow);
   box-shadow: 0 0 20px var(--teal-glow);
 }
 .btn-solve:active { transform: scale(0.97); }
-.btn-solve:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  animation: pulse 1s ease-in-out infinite;
+
+/* While a solve runs the button becomes Cancel */
+.btn-solve.solving {
+  border-color: var(--red-border);
+  background: var(--red-dim);
+  color: var(--red);
 }
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50%       { opacity: 0.8; }
+.btn-solve.solving:hover {
+  background: var(--red-dim);
+  box-shadow: none;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn-clear {
@@ -764,6 +808,15 @@ body {
   background: var(--amber-dim);
   border: 1px solid var(--amber-border);
   color: var(--amber);
+}
+
+.result-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 
 /* ── Divider ────────────────────────────────────────────────── */
@@ -855,6 +908,7 @@ body {
   flex-shrink: 0;
   padding-top: 6px;
 }
+.size-axis-label.rows { margin-left: 10px; }
 
 /* ── Preset squares (Presets mode) ──────────────────────────── */
 /* Shows a teal circle indicator — matches the ChessPeace game visual */
@@ -918,4 +972,45 @@ body {
   .mod-btn         { width: 48px; height: 36px; }
   .btn-solve,
   .btn-clear       { height: 60px; }
+}
+
+/* ============================================================
+   Pointer & accessibility refinements
+   ============================================================ */
+
+/* Hover feedback on devices that actually hover (mouse/trackpad) —
+   guarded so touch devices don't get sticky hover states. */
+@media (hover: hover) and (pointer: fine) {
+  .mode-tab:not(.active):hover,
+  .size-btn:not(.active):hover,
+  .tool-btn:not(.active):hover,
+  .mod-btn:not(.active):hover,
+  .colour-btn:not(.active):hover {
+    color: var(--text);
+    border-color: var(--border-2);
+    background: var(--panel-2);
+  }
+  .piece-btn:not(.active):hover {
+    border-color: var(--border-2);
+    background: var(--panel-2);
+  }
+  .tray-piece-btn:not(.has-pieces):hover {
+    border-color: var(--border);
+    background: var(--panel-2);
+  }
+}
+
+/* Visible focus ring for keyboard users only */
+button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* Honour the OS reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -17,8 +17,8 @@ export default function Board({
       if (current?.type === "fixed" || current?.type === "blocked") return null;
       return current?.type === "preset" ? "erase" : "preset";
     }
-    // "place" tool
-    if (current?.type === "fixed")   return "erase";
+    // "place" tool — placing on a fixed piece toggles it off (handled in
+    // App, which also restores any preset marker the piece was covering)
     if (current?.type === "blocked") return null;
     return "place";
   }, [activeTool, cells]);
@@ -100,6 +100,12 @@ export default function Board({
       content = <>{edges}{glyph}</>;
     }
 
+    // --d staggers the solution reveal piece by piece (capped so large
+    // boards never feel sluggish)
+    const style = solPiece
+      ? { "--d": `${Math.min(solPiece.order * 45, 540)}ms` }
+      : undefined;
+
     return (
       <div
         key={cellKey}
@@ -108,6 +114,7 @@ export default function Board({
         data-col={c}
         role="gridcell"
         aria-label={`${String.fromCharCode(65 + c)}${boardRows - r}`}
+        style={style}
       >
         {content}
       </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { PIECE_SYMBOLS, ALL_KINDS } from "./solver/engine.js";
 import Board from "./components/Board.jsx";
 import Controls from "./components/Controls.jsx";
@@ -25,8 +25,10 @@ const THEME_LABEL = { dark: "Dark", light: "Light", system: "System" };
 const THEME_BG    = { dark: "#080c10", light: "#e8ebef" };
 
 const getStoredTheme = () => {
-  try { return localStorage.getItem("theme") || "system"; }
-  catch { return "system"; }
+  try {
+    const t = localStorage.getItem("theme");
+    return t in THEME_NEXT ? t : "system";
+  } catch { return "system"; }
 };
 
 // Modes that auto-populate the staging tray with 1 of each piece
@@ -55,21 +57,35 @@ export default function App() {
 
   const [theme, setTheme] = useState(getStoredTheme);
 
-  const workerRef     = useRef(null);
-  const requestIdRef  = useRef(0);
-  const solveStartRef = useRef(0);
+  const workerRef      = useRef(null);
+  const requestIdRef   = useRef(0);
+  const solveStartRef  = useRef(0);
+  // Mirrors `solving` so callbacks can check it without re-binding on change.
+  const solvingRef     = useRef(false);
+  // The exact pieces array a solve ran against — solution indices map into
+  // this, never into a rebuilt array that the user may have edited since.
+  const solvePiecesRef = useRef([]);
 
-  useEffect(() => {
-    workerRef.current = new Worker(
+  const setSolvingState = useCallback((v) => {
+    solvingRef.current = v;
+    setSolving(v);
+  }, []);
+
+  // (Re)create the solver worker. Called on mount, and again whenever an
+  // in-flight solve must be killed — terminate is the only way to stop a
+  // busy worker, so cancellation means replacing it with a fresh one.
+  const spawnWorker = useCallback(() => {
+    workerRef.current?.terminate();
+    const w = new Worker(
       new URL("./solver/worker.js", import.meta.url),
       { type: "module" }
     );
-    workerRef.current.onmessage = ({ data }) => {
+    w.onmessage = ({ data }) => {
       const { solution: sol, error, requestId } = data;
       // Ignore responses from solves that were superseded or cleared.
       if (requestId !== requestIdRef.current) return;
       const elapsed = Math.round(performance.now() - solveStartRef.current);
-      setSolving(false);
+      setSolvingState(false);
       if (error) {
         setResultMsg({ kind: "warning", text: `Engine error: ${error}` });
         setSolution(null);
@@ -77,14 +93,37 @@ export default function App() {
       }
       if (sol) {
         setSolution(sol);
-        setResultMsg({ kind: "success", text: `Solution found ✓  —  Solved in ${elapsed} ms.` });
+        setResultMsg({ kind: "success", text: "Solution found ✓", time: elapsed });
       } else {
         setSolution(null);
-        setResultMsg({ kind: "failure", text: `No valid solution exists.  —  Solved in ${elapsed} ms.` });
+        setResultMsg({ kind: "failure", text: "No valid arrangement exists.", time: elapsed });
       }
     };
+    w.onerror = () => {
+      setSolvingState(false);
+      setSolution(null);
+      setResultMsg({ kind: "warning", text: "Solver failed — please try again." });
+    };
+    workerRef.current = w;
+  }, [setSolvingState]);
+
+  useEffect(() => {
+    spawnWorker();
     return () => workerRef.current?.terminate();
-  }, []);
+  }, [spawnWorker]);
+
+  // Discard any displayed result AND any in-flight solve. Called on every
+  // edit so a stale response can never be mapped onto a changed board, and
+  // a superseded worker never burns CPU in the background.
+  const invalidate = useCallback(() => {
+    requestIdRef.current++;
+    if (solvingRef.current) {
+      spawnWorker();
+      setSolvingState(false);
+    }
+    setSolution(null);
+    setResultMsg(null);
+  }, [spawnWorker, setSolvingState]);
 
   // ── Theme: apply choice, persist, keep PWA status-bar colour in sync ──
   useEffect(() => {
@@ -119,16 +158,16 @@ export default function App() {
       }
       return next;
     });
-    setSolution(null); setResultMsg(null);
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const handleColsChange = useCallback((n) => {
-    setBoardCols(n); setBoardRows(n); clipCells(n, n);
-  }, [clipCells]);
+    setBoardCols(n); clipCells(boardRows, n);
+  }, [clipCells, boardRows]);
 
-  const handleRowsChange = useCallback((n, currentCols) => {
-    setBoardRows(n); clipCells(n, currentCols);
-  }, [clipCells]);
+  const handleRowsChange = useCallback((n) => {
+    setBoardRows(n); clipCells(n, boardCols);
+  }, [clipCells, boardCols]);
 
   // ── Build puzzle for solver ───────────────────────────────────
   const buildPuzzle = useCallback(() => {
@@ -154,20 +193,24 @@ export default function App() {
   }, [cells, staged, boardRows, boardCols, mode]);
 
   // ── Solution display map ──────────────────────────────────────
-  const solutionMap = (() => {
+  // Built from the pieces array captured at solve time, so indices always
+  // match. `order` staggers the reveal animation per piece.
+  const solutionMap = useMemo(() => {
     if (!solution) return {};
-    const { pieces } = buildPuzzle();
+    const pieces = solvePiecesRef.current;
     const map = {};
+    let order = 0;
     for (const [idxStr, pos] of Object.entries(solution)) {
       const piece = pieces[Number(idxStr)];
       if (!piece || !pos) continue;
       map[`${pos[0]},${pos[1]}`] = {
         kind: piece.kind, colour: piece.colour,
         symbol: PIECE_SYMBOLS[piece.colour + piece.kind],
+        order: order++,
       };
     }
     return map;
-  })();
+  }, [solution]);
 
   // ── Cell interaction ──────────────────────────────────────────
   // In auto-tray modes, placing a fixed piece removes it from staged,
@@ -180,13 +223,27 @@ export default function App() {
     setCells(prev => {
       const next = { ...prev };
       const cur  = prev[cellKey];
+      // A preset marker covered by a piece/block carries through as
+      // `hadPreset` and is restored when the covering state is removed.
+      const coversPreset = cur?.type === "preset" || cur?.hadPreset;
       if (action === "place") {
         if (cur?.type === "blocked") return prev;
-        if (cur?.type === "fixed")   delete next[cellKey];
-        else next[cellKey] = { type: "fixed", kind: selectedKind, colour: selectedColour };
+        if (cur?.type === "fixed") {
+          if (cur.hadPreset) next[cellKey] = { type: "preset" };
+          else delete next[cellKey];
+        } else {
+          next[cellKey] = {
+            type: "fixed", kind: selectedKind, colour: selectedColour,
+            ...(coversPreset && { hadPreset: true }),
+          };
+        }
       } else if (action === "block") {
-        if (cur?.type === "blocked") delete next[cellKey];
-        else next[cellKey] = { type: "blocked" };
+        if (cur?.type === "blocked") {
+          if (cur.hadPreset) next[cellKey] = { type: "preset" };
+          else delete next[cellKey];
+        } else {
+          next[cellKey] = { type: "blocked", ...(coversPreset && { hadPreset: true }) };
+        }
       } else if (action === "preset") {
         if (cur?.type === "preset")  delete next[cellKey];
         else if (!cur || (cur.type !== "fixed" && cur.type !== "blocked"))
@@ -216,22 +273,24 @@ export default function App() {
       }
     }
 
-    setSolution(null); setResultMsg(null);
-  }, [selectedKind, selectedColour, mode, cells]);
+    invalidate();
+  }, [selectedKind, selectedColour, mode, cells, invalidate]);
 
   // ── Mode change ───────────────────────────────────────────────
   const handleModeChange = useCallback((newMode) => {
     setMode(newMode);
-    setSolution(null); setResultMsg(null);
+    invalidate();
+    // The Preset tool only exists in Presets mode — fall back to Block
+    setActiveTool(t => (t === "preset" && newMode !== "Presets") ? "block" : t);
     // Auto-populate tray if switching into an auto-tray mode with empty tray
     if (AUTO_TRAY_MODES.includes(newMode)) {
       setStaged(prev => prev.length === 0 ? defaultStaged() : prev);
     }
-  }, []);
+  }, [invalidate]);
 
   // ── Staging tray ──────────────────────────────────────────────
   const handleTrayClick = useCallback((kind, colour) => {
-    setSolution(null); setResultMsg(null);
+    invalidate();
     setStaged(prev => {
       if (trayMode === "add") return [...prev, { kind, colour }];
       const idx = [...prev].reverse().findIndex(p => p.kind === kind && p.colour === colour);
@@ -239,43 +298,49 @@ export default function App() {
       const realIdx = prev.length - 1 - idx;
       return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
     });
-  }, [trayMode]);
+  }, [trayMode, invalidate]);
 
   // Empty the staging tray without touching the board or board setup.
   const handleClearStaged = useCallback(() => {
     setStaged([]);
-    setSolution(null); setResultMsg(null);
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
-  const stagedCounts = (() => {
+  const stagedCounts = useMemo(() => {
     const counts = {};
     for (const { kind, colour } of staged) {
       const k = `${colour}${kind}`;
       counts[k] = (counts[k] || 0) + 1;
     }
     return counts;
-  })();
+  }, [staged]);
 
-  // ── Solve ─────────────────────────────────────────────────────
+  // ── Solve / Cancel ────────────────────────────────────────────
   const handleSolve = useCallback(() => {
+    if (solvingRef.current) {
+      // The button doubles as Cancel while a solve is running
+      invalidate();
+      setResultMsg({ kind: "warning", text: "Solve cancelled." });
+      return;
+    }
     const { boardConfig, pieces } = buildPuzzle();
     if (pieces.length === 0) {
       setResultMsg({ kind: "warning", text: "Add pieces to the staging tray first." });
       return;
     }
-    setSolving(true); setSolution(null); setResultMsg(null);
+    solvePiecesRef.current = pieces;
+    setSolvingState(true); setSolution(null); setResultMsg(null);
     solveStartRef.current = performance.now();
     workerRef.current?.postMessage({ boardConfig, pieces, requestId: ++requestIdRef.current });
-  }, [buildPuzzle]);
+  }, [buildPuzzle, invalidate, setSolvingState]);
 
   // ── Clear — resets to block tool and repopulates tray ─────────
   const handleClear = useCallback(() => {
-    requestIdRef.current++; // discard any in-flight solve's response
+    invalidate(); // discards any in-flight solve
     setCells({});
     setStaged(AUTO_TRAY_MODES.includes(mode) ? defaultStaged() : []);
-    setSolution(null); setResultMsg(null); setSolving(false);
     setActiveTool("block"); // board setup comes first
-  }, [mode]);
+  }, [mode, invalidate]);
 
   const showBlackRow = mode === "Two-Colour";
 
@@ -307,9 +372,9 @@ export default function App() {
           {SIZES.map(n => (
             <button key={n} className={`size-btn${boardCols===n?" active":""}`} onClick={() => handleColsChange(n)}>{n}</button>
           ))}
-          <span className="size-axis-label" style={{ marginLeft: 10 }}>Rows</span>
+          <span className="size-axis-label rows">Rows</span>
           {SIZES.map(n => (
-            <button key={n} className={`size-btn${boardRows===n?" active":""}`} onClick={() => handleRowsChange(n, boardCols)}>{n}</button>
+            <button key={n} className={`size-btn${boardRows===n?" active":""}`} onClick={() => handleRowsChange(n)}>{n}</button>
           ))}
         </div>
 
@@ -347,15 +412,20 @@ export default function App() {
       />
 
       <div className="action-row">
-        <button className="btn-solve" onClick={handleSolve} disabled={solving}>
-          {solving ? "Solving…" : "Solve Puzzle ♟"}
+        <button className={`btn-solve${solving ? " solving" : ""}`} onClick={handleSolve}>
+          {solving
+            ? <><span className="spinner" aria-hidden="true" />Cancel</>
+            : "Solve Puzzle ♟"}
         </button>
         <button className="btn-clear" onClick={handleClear}>Reset</button>
       </div>
 
       {resultMsg && (
-        <div className={`result-banner ${resultMsg.kind}`}>
+        <div className={`result-banner ${resultMsg.kind}`} role="status">
           <span>{resultMsg.text}</span>
+          {resultMsg.time != null && (
+            <span className="result-time">{resultMsg.time} ms</span>
+          )}
         </div>
       )}
     </div>

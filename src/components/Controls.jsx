@@ -36,7 +36,7 @@ export default function Controls({
       {/* ── Piece bar ── */}
       <div className="piece-bar-section">
         <div className="piece-bar-header">
-          <div className="section-label" style={{ marginBottom: 0 }}>Piece</div>
+          <div className="section-label flush">Piece</div>
           <div className="colour-toggle">
             {["W", "B"].map(col => (
               <button

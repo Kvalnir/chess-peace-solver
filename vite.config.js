@@ -46,7 +46,27 @@ export default defineConfig({
 
       workbox: {
         globPatterns: ["**/*.{js,css,html,png,ico,svg,woff2}"],
-        runtimeCaching: [],
+        // Cache Google Fonts so typography survives offline (standard
+        // Workbox recipe: stylesheet revalidates, font files cache-first).
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "google-fonts-stylesheets" },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: {
+                maxEntries: 12,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
         // Prevent the service worker from intercepting cross-origin requests
         navigateFallback: `/${REPO_NAME}/index.html`,
         navigateFallbackDenylist: [/^\/api/],

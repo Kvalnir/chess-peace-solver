@@ -127,7 +127,13 @@ export function solve(boardConfig, pieces) {
   for (let i = 0; i < pieces.length; i++)
     (pieces[i].fixedPos !== null ? fixedIdx : freeIdx).push(i);
 
-  freeIdx.sort((a,b) => (PIECE_WEIGHTS[pieces[b].kind]||0) - (PIECE_WEIGHTS[pieces[a].kind]||0));
+  // Heavier pieces first to fail fast; kind+colour tiebreakers group identical
+  // pieces together so the symmetry-breaking rule below can apply to them.
+  freeIdx.sort((a, b) =>
+    (PIECE_WEIGHTS[pieces[b].kind] || 0) - (PIECE_WEIGHTS[pieces[a].kind] || 0) ||
+    (pieces[a].kind < pieces[b].kind ? -1 : pieces[a].kind > pieces[b].kind ? 1 : 0) ||
+    (pieces[a].colour < pieces[b].colour ? -1 : pieces[a].colour > pieces[b].colour ? 1 : 0)
+  );
 
   const fixedSquareKeys = new Set(fixedIdx.map(i => coordKey(...pieces[i].fixedPos)));
 
@@ -153,6 +159,8 @@ export function solve(boardConfig, pieces) {
 
   const placedR = new Int8Array(pieces.length).fill(-1);
   const placedC = new Int8Array(pieces.length).fill(-1);
+  // available[] index chosen at each depth — drives the symmetry-breaking rule
+  const availIdxAt = new Int16Array(freeIdx.length);
   const usedKeys = new Set();
   let solution = null;
 
@@ -184,11 +192,23 @@ export function solve(boardConfig, pieces) {
       return;
     }
     const pieceIdx = freeIdx[depth];
-    for (const [r,c] of available) {
+    // Symmetry breaking: identical pieces are interchangeable, so force them
+    // into increasing board order — any solution can be reordered to satisfy
+    // this, and it prunes the (k!−1)/k! redundant permutations of k copies.
+    let startIdx = 0;
+    if (depth > 0) {
+      const prev = pieces[freeIdx[depth - 1]];
+      const cur  = pieces[pieceIdx];
+      if (prev.kind === cur.kind && prev.colour === cur.colour)
+        startIdx = availIdxAt[depth - 1] + 1;
+    }
+    for (let ai = startIdx; ai < available.length; ai++) {
+      const [r, c] = available[ai];
       const k = coordKey(r,c);
       if (usedKeys.has(k) || !ok(pieceIdx,r,c)) continue;
       const isPreset = hasPresets && presetKeySet.has(k);
       placedR[pieceIdx]=r; placedC[pieceIdx]=c; usedKeys.add(k);
+      availIdxAt[depth] = ai;
       if (isPreset) filledPresets++;
       backtrack(depth+1);
       if (solution) return;
