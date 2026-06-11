@@ -144,6 +144,16 @@ body {
   padding-right: max(var(--sar), 16px);
 }
 
+/* Installed PWA: iOS standalone under-reports dvh (it excludes the status-bar
+   and home-indicator bands even though the layout viewport covers the full
+   screen with viewport-fit=cover + black-translucent), so 100dvh leaves a dead
+   gap at the bottom. The html/body height:100% chain DOES resolve to the real
+   full screen in standalone, so size #root from that instead. Browser-tab
+   Safari keeps 100dvh above, which tracks the collapsing toolbar correctly. */
+@media (display-mode: standalone) {
+  #root { height: 100%; }
+}
+
 .app {
   width: 100%;
   max-width: 520px;
