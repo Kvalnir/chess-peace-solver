@@ -144,14 +144,17 @@ body {
   padding-right: max(var(--sar), 16px);
 }
 
-/* Installed PWA: iOS standalone under-reports dvh (it excludes the status-bar
-   and home-indicator bands even though the layout viewport covers the full
-   screen with viewport-fit=cover + black-translucent), so 100dvh leaves a dead
-   gap at the bottom. The html/body height:100% chain DOES resolve to the real
-   full screen in standalone, so size #root from that instead. Browser-tab
-   Safari keeps 100dvh above, which tracks the collapsing toolbar correctly. */
+/* Installed PWA: iOS standalone under-reports both 100dvh AND the height:100%
+   chain — each stops above the home-indicator band even though the layout
+   viewport covers the full screen with viewport-fit=cover + black-translucent,
+   so a dead gap (and a seam where the body texture ends) appears at the bottom.
+   100vh is the one unit that resolves to the real full screen here: a standalone
+   PWA has no collapsing toolbar, so there's nothing for vh to over-report.
+   Size both the scroller and the textured body from it. Browser-tab Safari keeps
+   100dvh above, which tracks the collapsing toolbar correctly. */
 @media (display-mode: standalone) {
-  #root { height: 100%; }
+  body  { min-height: 100vh; }
+  #root { height: 100vh; }
 }
 
 .app {
