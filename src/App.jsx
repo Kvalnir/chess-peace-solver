@@ -162,8 +162,8 @@ export default function App() {
   }, [invalidate]);
 
   const handleColsChange = useCallback((n) => {
-    setBoardCols(n); clipCells(boardRows, n);
-  }, [clipCells, boardRows]);
+    setBoardCols(n); setBoardRows(n); clipCells(n, n);
+  }, [clipCells]);
 
   const handleRowsChange = useCallback((n) => {
     setBoardRows(n); clipCells(n, boardCols);
