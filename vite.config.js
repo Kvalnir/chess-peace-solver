@@ -79,9 +79,11 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split solver into its own chunk for faster initial paint
-          solver: ["./src/solver/engine.js"],
+        // Split solver into its own chunk for faster initial paint.
+        // Function form (not the object form) for compatibility with
+        // Vite 8's Rolldown bundler, which only accepts a function here.
+        manualChunks(id) {
+          if (id.includes("/src/solver/engine.js")) return "solver";
         },
       },
     },
