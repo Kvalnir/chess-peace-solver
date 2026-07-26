@@ -9,15 +9,18 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 ## Features
 
 - **All five puzzle modes** — Classic, Multiples, Two-Colour, Islands, Presets
-- **Fits any window** — the whole UI always sizes to the viewport with no scrolling; the board grows to fill the space left over after the controls and rebalances on resize, orientation change, or when the result banner appears. If a screen is too small even at the minimum cell size, the page scrolls rather than clipping
+- **Board-first layout** — the controls are packed into four compact rows so the board takes everything left over; on a phone it ends up limited by the width of the screen rather than by the chrome around it
+- **Fits any window** — the whole UI always sizes to the viewport with no scrolling, and rebalances on resize or orientation change. If a screen is too small even at the minimum cell size, the page scrolls rather than clipping
+- **Side-by-side in landscape** — in a window wider than it is tall, the controls move beside the board so it can use the full height
 - **Light & dark themes** — follows your OS appearance by default; tap the header icon to cycle 🌙 Dark → ☀️ Light → 🖥️ System. Your choice is remembered, and the PWA status-bar colour matches the active theme
 - **Tap-to-place & drag-paint** — touch-optimised board interaction
+- **Undo & redo** — steps back through board edits, tray changes, board size, mode switches and Reset; a whole drag-painted run is a single step
 - **Region outlines** — blocked squares render as one solid mass, and accessible squares get a teal boundary line wherever they meet a blocked square, so each playable island reads clearly at a glance
 - **Non-square boards** — set columns and rows independently (4–6)
 - **Smart staging tray** — auto-populated with one of each piece in Classic/Islands/Presets modes; stays in sync as you place and remove fixed pieces
 - **Preset squares** — mark positions with a circle (○) in Presets mode; every marked square must be occupied in the solution, but pieces may be placed anywhere on the board
 - **WebWorker solver** — runs off the main thread so the UI never freezes; the Solve button doubles as **Cancel** while a search is running, and any board edit mid-solve discards the stale search automatically
-- **Solve time display** — shows compute time in milliseconds
+- **Solve time display** — the result and compute time appear on the line under the mode tabs, sharing it with the mode hint so nothing on the page moves when a solve finishes
 - **Animated reveal** — solution pieces pop onto the board one by one (honours your OS reduced-motion setting)
 - **Offline capable** — works without an internet connection once installed
 - **iOS PWA** — install via Safari → Share → Add to Home Screen
@@ -47,6 +50,10 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 
 **Drag-paint:** Hold and drag across squares to apply the same action to multiple squares at once.
 
+**Piece picker:** The row of piece buttons appears while the **Place** tool is active — it only affects what that tool puts down. In Two-Colour mode a ⬜/⬛ toggle appears beside it.
+
+**Undo / redo:** The ↶ and ↷ buttons at the end of the tool row step through your edits — board squares, tray changes, board size, mode switches and Reset. A drag-painted run of squares undoes as one step. On a keyboard: `Ctrl`/`Cmd` + `Z` to undo, `Ctrl` + `Shift` + `Z` or `Ctrl` + `Y` to redo. History holds the last 50 edits.
+
 ### Puzzle modes
 
 | Mode | Description |
@@ -63,7 +70,7 @@ The tray holds pieces for the solver to auto-place.
 
 - **`+` mode** — tap a piece icon to queue one copy
 - **`−` mode** — tap a piece icon to remove one copy
-- **Clear** — empties the tray in one tap, leaving the board and tools untouched
+- **🗑 Clear** — empties the tray in one tap, leaving the board and tools untouched
 - In Classic / Islands / Presets modes, the tray starts with one of each piece and stays in sync with fixed pieces placed on the board
 - Amber count = White pieces queued · Violet count = Black pieces queued *(Two-Colour mode)*
 
@@ -97,12 +104,12 @@ chess-peace-solver/
 │   │   └── worker.js              # WebWorker wrapper
 │   ├── components/
 │   │   ├── Board.jsx              # Interactive grid with drag-paint
-│   │   ├── Controls.jsx           # Tool bar + piece bar
+│   │   ├── Controls.jsx           # Board size, tools, piece picker, undo/redo
 │   │   ├── StagingTray.jsx        # Piece queue for the solver
-│   │   └── ModeSelector.jsx       # Mode tabs
-│   ├── App.jsx                    # Root component & state
+│   │   └── ModeSelector.jsx       # Mode tabs + shared hint/result status line
+│   ├── App.jsx                    # Root component, state & undo history
 │   ├── main.jsx                   # React entry point
-│   └── index.css                  # Light + dark themes (light-dark() tokens)
+│   └── index.css                  # Layout, light + dark themes (light-dark() tokens)
 ├── index.html                     # iOS PWA meta tags
 ├── vite.config.js                 # Vite + PWA plugin config
 └── package.json
@@ -115,12 +122,12 @@ chess-peace-solver/
 | | |
 |---|---|
 | Framework | React 18 |
-| Bundler | Vite 5 |
+| Bundler | Vite 8 |
 | PWA | vite-plugin-pwa (Workbox) |
 | Styling | Plain CSS custom properties |
 | Solver | Pure JS backtracking, runs in a WebWorker |
 | Hosting | GitHub Pages (free) |
-| Bundle size | ~52 KB gzipped |
+| Bundle size | ~57 KB gzipped (51 KB of it the React/app chunk) |
 
 ---
 
