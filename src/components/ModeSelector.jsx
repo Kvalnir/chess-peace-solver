@@ -1,11 +1,13 @@
 /**
  * ModeSelector
- * Horizontally scrollable tab strip for choosing the active game mode.
- * Shows a brief contextual hint below the tabs.
+ * Tab strip for choosing the active game mode, plus a single status line
+ * underneath. The status line does double duty: it shows the mode hint
+ * normally, and the solve result when there is one. Sharing one fixed line
+ * keeps the result from pushing the board around when it appears.
  */
-export default function ModeSelector({ modes, active, hint, onChange }) {
+export default function ModeSelector({ modes, active, hint, result, onChange }) {
   return (
-    <div className="mode-selector">
+    <div className="setup-strip">
       <div
         className="mode-tabs"
         role="tablist"
@@ -25,8 +27,14 @@ export default function ModeSelector({ modes, active, hint, onChange }) {
         ))}
       </div>
 
-      {/* key remounts the hint on mode change so it fades in */}
-      {hint && <p className="mode-hint" key={active}>{hint}</p>}
+      {/* The <p> itself is never remounted, so it stays a live region that
+          announces the result; only the text inside is keyed, to fade in. */}
+      <p className={`status-line${result ? ` result ${result.kind}` : ""}`} role="status">
+        <span className="status-text" key={result ? result.text : active}>
+          {result ? result.text : hint}
+        </span>
+        {result?.time != null && <span className="status-time">{result.time} ms</span>}
+      </p>
     </div>
   );
 }

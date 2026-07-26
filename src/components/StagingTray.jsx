@@ -1,5 +1,11 @@
 import { PIECE_SYMBOLS, ALL_KINDS } from "../solver/engine.js";
 
+/**
+ * StagingTray
+ * One compact row of piece chips (two rows in Two-Colour mode) with the
+ * add/remove/clear cluster pinned to the right, so the chips of both rows
+ * stay aligned. Counts live on the chips themselves — no header, no caption.
+ */
 export default function StagingTray({
   stagedCounts, trayMode, onTrayModeChange, onPieceClick, onClear, showBlackRow,
 }) {
@@ -10,32 +16,8 @@ export default function StagingTray({
   const hasStaged = Object.values(stagedCounts).some((c) => c > 0);
 
   return (
-    <div className="staging-tray">
-      <div className="tray-card">
-        {/* Header */}
-        <div className="tray-header">
-          <span className="tray-title">📦 Staging Tray</span>
-          <div className="tray-header-actions">
-            <button
-              className="tray-clear-btn"
-              onClick={onClear}
-              disabled={!hasStaged}
-              aria-label="Clear all staged pieces"
-            >Clear</button>
-            <div className="tray-modifier">
-              {[{ value: "add", icon: "+" }, { value: "sub", icon: "−" }].map(({ value, icon }) => (
-                <button
-                  key={value}
-                  className={`mod-btn${trayMode === value ? " active" : ""}`}
-                  onClick={() => onTrayModeChange(value)}
-                  aria-label={value === "add" ? "Add mode" : "Remove mode"}
-                >{icon}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Piece rows */}
+    <div className="tray-card" aria-label="Staging tray">
+      <div className="tray-rows">
         {rows.map(({ colour, label }) => {
           const isBlack = colour === "B";
           return (
@@ -53,18 +35,37 @@ export default function StagingTray({
                     onClick={() => onPieceClick(kind, colour)}
                     aria-label={`${isBlack ? "Black" : "White"} ${kind}: ${cnt} staged`}
                   >
-                    <span className="tray-sym">{sym}</span>
-                    <span className="tray-cnt">{cnt}</span>
+                    <span className="tray-sym" aria-hidden="true">{sym}</span>
+                    <span className="tray-cnt" aria-hidden="true">{cnt}</span>
                   </button>
                 );
               })}
             </div>
           );
         })}
+      </div>
 
-        <p className="tray-hint">
-          {trayMode === "add" ? "Tap a piece to queue it for auto-placement." : "Tap a piece to remove one from the queue."}
-        </p>
+      <div className="tray-tools">
+        {[
+          { value: "add", icon: "+", label: "Tap pieces to add them to the tray" },
+          { value: "sub", icon: "−", label: "Tap pieces to remove them from the tray" },
+        ].map(({ value, icon, label }) => (
+          <button
+            key={value}
+            className={`mod-btn${trayMode === value ? " active" : ""}`}
+            onClick={() => onTrayModeChange(value)}
+            title={label}
+            aria-label={label}
+            aria-pressed={trayMode === value}
+          >{icon}</button>
+        ))}
+        <button
+          className="mod-btn tray-clear-btn"
+          onClick={onClear}
+          disabled={!hasStaged}
+          title="Empty the tray"
+          aria-label="Empty the staging tray"
+        >🗑</button>
       </div>
     </div>
   );

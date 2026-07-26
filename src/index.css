@@ -2,6 +2,11 @@
    Chess Peace Solver — Global Styles
    Themes: light + dark via light-dark() tokens (follows OS by default)
    Fonts: Crimson Pro (title) + JetBrains Mono (UI)
+
+   Layout: header → mode strip → board (takes all leftover height) →
+   control deck. Every control below the board is a single unlabelled row
+   so the board keeps as much of the viewport as possible; on wide or
+   landscape screens the deck moves beside the board instead.
    ============================================================ */
 
 /* ── Reset & base ──────────────────────────────────────────── */
@@ -83,6 +88,17 @@
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left,   0px);
 
+  /* Control metrics — one place to scale the whole deck per breakpoint.
+     Everything below the board is sized from these, so growing the UI on a
+     tablet is a matter of bumping four numbers. */
+  --h-chip:  26px;   /* board-size chips        */
+  --h-tool:  36px;   /* click-tool buttons      */
+  --h-piece: 44px;   /* piece-to-place buttons  */
+  --h-tray:  34px;   /* staging tray chips      */
+  --h-act:   46px;   /* Solve / Reset           */
+  --deck-gap: 8px;
+  --edge:    14px;   /* shared left/right inset for every section */
+
   /* Board cell size is computed on .board-grid from the board area's actual
      width AND height (container query units), so the whole UI fits the window
      with no scrolling. See .board-area / .board-grid below. */
@@ -121,8 +137,8 @@ body {
 /* ── App shell ──────────────────────────────────────────────── */
 /* The viewport-height scroll container. Normally the UI fits and nothing
    scrolls; if the board bottoms out at its minimum cell size and the content
-   still doesn't fit, this scrolls vertically instead of clipping. Safe-area +
-   edge padding lives here so it's inside the 100dvh box (box-sizing: border-box). */
+   still doesn't fit, this scrolls vertically instead of clipping. The safe-area
+   insets live here so they're inside the 100dvh box (box-sizing: border-box). */
 #root {
   display: flex;
   flex-direction: column;
@@ -139,9 +155,13 @@ body {
      offsets to the scroller's content edge (inside this padding), so the
      header rendered --sat too low and sat exactly on top of the mode
      selector. Only happened in portrait PWA, where --sat > 0. */
-  padding-bottom: calc(var(--sab) + 8px);
-  padding-left: max(var(--sal), 16px);
-  padding-right: max(var(--sar), 16px);
+  /* Only the safe-area insets live here. The visible edge margin is each
+     section's own --edge padding, so the header and mode strip can paint
+     their backgrounds edge to edge while their text still lines up with
+     the board and the deck below. */
+  padding-bottom: calc(var(--sab) + 6px);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
 }
 
 /* Installed PWA: iOS standalone under-reports both 100dvh AND the height:100%
@@ -159,13 +179,13 @@ body {
 
 .app {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   /* Fill the viewport when content fits; grow past it (→ #root scrolls) when
      everything is at its minimum and still doesn't fit. */
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
 }
 
@@ -176,11 +196,11 @@ body {
      blurred header extends up under the iOS status bar / Dynamic Island.
      Never offset the header itself by --sat (sticky or relative top) — that
      shifts it down over the mode selector in standalone mode. */
-  --header-pad-top: 14px;
-  padding: calc(var(--header-pad-top) + var(--sat)) 16px 10px;
+  --header-pad-top: 10px;
+  padding: calc(var(--header-pad-top) + var(--sat)) var(--edge) 8px;
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   border-bottom: 1px solid var(--border);
   background: var(--header-bg);
   backdrop-filter: blur(12px);
@@ -192,14 +212,15 @@ body {
 
 .app-header h1 {
   font-family: var(--font-title);
-  font-size: 1.55rem;
+  font-size: 1.4rem;
   font-weight: 600;
   color: var(--teal);
   letter-spacing: 0.01em;
+  line-height: 1.15;
 }
 
 .app-header .tagline {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--sub);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -209,8 +230,8 @@ body {
 .theme-toggle {
   margin-left: auto;
   align-self: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -219,7 +240,7 @@ body {
   border: 1px solid transparent;
   background: var(--panel);
   color: var(--text);
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
@@ -231,21 +252,10 @@ body {
 }
 .theme-toggle:active { transform: scale(0.92); }
 
-/* ── Section labels ─────────────────────────────────────────── */
-.section-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--sub);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-.section-label.flush { margin-bottom: 0; }
-
-/* ── Mode selector ──────────────────────────────────────────── */
-.mode-selector {
+/* ── Mode strip (tabs + status line) ────────────────────────── */
+.setup-strip {
   width: 100%;
-  padding: 10px 16px 8px;
+  padding: 8px var(--edge) 7px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -280,32 +290,55 @@ body {
 }
 .mode-tab:active { opacity: 0.7; }
 
-.mode-hint {
+/* One shared line for the mode hint and the solve result. Sharing it means a
+   result never pushes the board up — the line is always there, only its text
+   and colour change. Clamped to two lines so a long hint can't grow the strip. */
+.status-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 1.45em;
+  margin-top: 5px;
   font-size: 0.68rem;
-  color: var(--sub);
-  margin-top: 6px;
   line-height: 1.45;
+  color: var(--sub);
+}
+.status-line .status-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   animation: hintFade 0.25s ease;
 }
+.status-line.result { font-weight: 700; }
+.status-line.result.success { color: var(--green); }
+.status-line.result.failure { color: var(--red);   }
+.status-line.result.warning { color: var(--amber); }
+
+.status-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
 @keyframes hintFade {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* ── Board area ─────────────────────────────────────────────── */
-/* board-wrap grows to absorb all leftover vertical space; the board itself
-   is the single flex-grow element so the rest of the UI keeps its natural
-   size and nothing scrolls. */
-.board-wrap {
-  width: 100%;
+/* ── Stage (the board's slice of the viewport) ──────────────── */
+/* .stage absorbs all leftover vertical space; the deck below keeps its
+   natural height, so growing the window grows the board and nothing else. */
+.stage {
   flex: 1 1 0;
   /* min-height stays auto so the board's minimum (below) propagates up and
      forces a scroll rather than being shrunk away. */
-  padding: 16px 16px 12px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  padding: 10px var(--edge);
 }
 
 /* Holds the board and supplies the container the grid measures itself
@@ -324,34 +357,6 @@ body {
   display: grid;
   place-items: center;
 }
-
-.board-size-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.size-btn {
-  width: 32px;
-  height: 28px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--sub);
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-}
-.size-btn.active {
-  background: var(--teal-dim);
-  color: var(--teal);
-  border-color: var(--teal-border);
-}
-.size-btn:active { transform: scale(0.94); }
 
 /* ── Board grid ─────────────────────────────────────────────── */
 .board-grid {
@@ -476,24 +481,64 @@ body {
 .bnd-l { left:   -1px; top:  -1px; bottom: -1px; width:  2px; }
 .bnd-r { right:  -1px; top:  -1px; bottom: -1px; width:  2px; }
 
-/* ── Controls panel ─────────────────────────────────────────── */
-.controls-panel {
-  width: 100%;
-  padding: 0 16px;
+/* ── Control deck ───────────────────────────────────────────── */
+/* Everything below the board. Fixed height, so the stage above gets the
+   rest. Each child is one row — no section headings, no helper captions. */
+.deck {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--deck-gap);
+  padding: 0 var(--edge);
 }
 
-/* Tool bar */
-.tool-bar {
+.deck-row {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
+.mini-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--sub);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.mini-label.rows { margin-left: 8px; }
+
+/* Board size chips */
+.chip-group {
+  display: flex;
+  gap: 4px;
+}
+
+.chip {
+  width: 30px;
+  height: var(--h-chip);
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--sub);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip.active {
+  background: var(--teal-dim);
+  color: var(--teal);
+  border-color: var(--teal-border);
+}
+.chip:active { transform: scale(0.94); }
+
+/* Click tool */
 .tool-btn {
   flex: 1;
-  height: 38px;
+  height: var(--h-tool);
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--panel);
@@ -513,32 +558,57 @@ body {
 }
 .tool-btn:active { transform: scale(0.96); }
 
-/* Piece bar */
-.piece-bar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* Piece to place — only rendered while the Place tool is active */
+.piece-bar {
+  gap: 5px;
+  animation: rowIn 0.18s ease-out;
+}
+@keyframes rowIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.piece-bar-header {
+.piece-btn {
+  flex: 1;
+  height: var(--h-piece);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  transition: all 0.15s;
+  user-select: none;
+  position: relative;
 }
+.piece-btn.active {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+  box-shadow: 0 0 12px var(--amber-soft);
+}
+.piece-btn:active { transform: scale(0.93); }
 
+/* Piece colour — Two-Colour mode only, tucked in beside the pieces */
 .colour-toggle {
   display: flex;
   gap: 4px;
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 .colour-btn {
-  padding: 3px 10px;
-  border-radius: 5px;
+  width: 30px;
+  height: var(--h-piece);
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--sub);
   font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
@@ -549,139 +619,36 @@ body {
   border-color: var(--sky-border);
 }
 
-.piece-bar {
-  display: flex;
-  gap: 5px;
-}
-
-.piece-btn {
-  flex: 1;
-  height: 52px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  font-size: 1.6rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  transition: all 0.15s;
-  user-select: none;
-  position: relative;
-}
-.piece-btn .piece-label {
-  font-size: 0.52rem;
-  color: var(--sub);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  margin-top: 1px;
-}
-.piece-btn.active {
-  border-color: var(--amber);
-  background: var(--amber-dim);
-  box-shadow: 0 0 12px var(--amber-soft);
-}
-.piece-btn:active { transform: scale(0.93); }
-
 /* ── Staging tray ────────────────────────────────────────────── */
-.staging-tray {
-  width: 100%;
-  padding: 0 16px;
-}
-
+/* A single row of chips (two in Two-Colour mode) with the add/remove/clear
+   cluster pinned right, so both colour rows stay column-aligned. */
 .tray-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tray-rows {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.tray-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tray-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--sub);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.tray-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tray-clear-btn {
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--sub);
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-}
-.tray-clear-btn:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--sub);
-}
-.tray-clear-btn:active:not(:disabled) { transform: scale(0.94); }
-.tray-clear-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.tray-modifier {
-  display: flex;
-  gap: 3px;
-}
-
-.mod-btn {
-  width: 36px;
-  height: 26px;
-  border-radius: 5px;
-  border: 1px solid transparent;
-  background: var(--panel);
-  color: var(--sub);
-  font-family: var(--font-ui);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-}
-.mod-btn.active {
-  background: var(--teal-dim);
-  color: var(--teal);
-  border-color: var(--teal-border);
+  gap: 4px;
 }
 
 .tray-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .tray-colour-label {
-  width: 12px;
-  font-size: 0.65rem;
+  width: 10px;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--sub);
   flex-shrink: 0;
@@ -689,7 +656,8 @@ body {
 
 .tray-piece-btn {
   flex: 1;
-  height: 34px;
+  min-width: 0;
+  height: var(--h-tray);
   border-radius: 6px;
   border: 1px solid transparent;
   background: var(--panel);
@@ -705,7 +673,7 @@ body {
   gap: 3px;
   user-select: none;
 }
-.tray-piece-btn .tray-sym { font-size: 1.05rem; }
+.tray-piece-btn .tray-sym { font-size: 1.05rem; line-height: 1; }
 .tray-piece-btn .tray-cnt { font-size: 0.7rem; color: var(--sub); }
 .tray-piece-btn.has-pieces {
   background: var(--amber-dim);
@@ -714,24 +682,55 @@ body {
 .tray-piece-btn.has-pieces .tray-cnt { color: var(--amber); }
 .tray-piece-btn:active { transform: scale(0.94); }
 
-.tray-hint {
-  font-size: 0.66rem;
+.tray-tools {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding-left: 2px;
+  border-left: 1px solid var(--border);
+}
+
+.mod-btn {
+  width: 30px;
+  height: var(--h-tray);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--panel);
   color: var(--sub);
-  margin: 0;
-  line-height: 1.4;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.mod-btn.active {
+  background: var(--teal-dim);
+  color: var(--teal);
+  border-color: var(--teal-border);
+}
+.mod-btn:active:not(:disabled) { transform: scale(0.94); }
+
+.tray-clear-btn { font-size: 0.8rem; }
+.tray-clear-btn:hover:not(:disabled) {
+  color: var(--red);
+  border-color: var(--red-border);
+  background: var(--red-dim);
+}
+.tray-clear-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* ── Action buttons ─────────────────────────────────────────── */
 .action-row {
-  width: 100%;
-  padding: 12px 16px 4px;
-  display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .btn-solve {
   flex: 1;
-  height: 48px;
+  height: var(--h-act);
   border-radius: 10px;
   border: 1px solid var(--teal);
   background: var(--teal-dim);
@@ -785,8 +784,8 @@ body {
 }
 
 .btn-clear {
-  height: 48px;
-  padding: 0 20px;
+  height: var(--h-act);
+  padding: 0 18px;
   border-radius: 10px;
   border: 1px solid var(--border-2);
   background: var(--panel);
@@ -798,83 +797,13 @@ body {
   letter-spacing: 0.04em;
   transition: all 0.15s;
   user-select: none;
+  flex-shrink: 0;
 }
 .btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
 .btn-clear:active { transform: scale(0.96); }
 
-/* ── Result banner ──────────────────────────────────────────── */
-.result-banner {
-  width: calc(100% - 32px);
-  margin: 8px 16px 0;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  animation: bannerIn 0.25s ease-out;
-}
-@keyframes bannerIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.result-banner.success {
-  background: var(--green-dim);
-  border: 1px solid var(--green-border);
-  color: var(--green);
-}
-.result-banner.failure {
-  background: var(--red-dim);
-  border: 1px solid var(--red-border);
-  color: var(--red);
-}
-.result-banner.warning {
-  background: var(--amber-dim);
-  border: 1px solid var(--amber-border);
-  color: var(--amber);
-}
-
-.result-time {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.75;
-}
-
-/* ── Divider ────────────────────────────────────────────────── */
-.divider {
-  width: calc(100% - 32px);
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-/* ── Short screens: trim vertical chrome so the board keeps room ─── */
-@media (max-height: 820px) {
-  .board-wrap   { padding-top: 12px; padding-bottom: 8px; gap: 8px; }
-  .mode-selector { padding-top: 8px; padding-bottom: 6px; }
-  .controls-panel { gap: 8px; }
-  .tray-card    { padding: 8px 12px; gap: 6px; }
-  .action-row   { padding: 8px 16px 2px; }
-}
-
-@media (max-height: 700px) {
-  /* Trim via the custom property so the safe-area term in the header's
-     padding calc survives. */
-  .app-header   { --header-pad-top: 8px; padding-bottom: 6px; }
-  .board-wrap   { padding-top: 8px; padding-bottom: 6px; gap: 6px; }
-  .controls-panel { gap: 6px; }
-  .tray-card    { padding: 6px 12px; gap: 5px; }
-  .btn-solve,
-  .btn-clear    { height: 42px; }
-}
-
 /* ============================================================
-   Black piece colour system (violet) + preset / size-label UI
+   Black piece colour system (violet) + preset squares
    ============================================================ */
 
 /* ── Board cells — Black fixed pieces ───────────────────────── */
@@ -925,19 +854,6 @@ body {
   color: var(--violet);
 }
 
-/* ── Size axis labels (Cols / Rows) ─────────────────────────── */
-.size-axis-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--sub);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  width: 28px;
-  flex-shrink: 0;
-  padding-top: 6px;
-}
-.size-axis-label.rows { margin-left: 10px; }
-
 /* ── Preset squares (Presets mode) ──────────────────────────── */
 /* Shows a teal circle indicator — matches the ChessPeace game visual */
 .board-cell.preset {
@@ -965,41 +881,90 @@ body {
 }
 
 /* ============================================================
-   Responsive scaling — grow the whole UI on tablets & desktops
-   so it doesn't stay phone-sized on large screens.
-   Bumps: root font-size (scales all rem text), the board cell
-   max, the app container width, and the px-based control heights
-   so everything stays proportional.
+   Layout variants
    ============================================================ */
 
-/* ── Tablets (portrait ~768px and up) ───────────────────────── */
-@media (min-width: 640px) {
-  html { font-size: 16px; }
-  .app { max-width: 720px; }
-
-  .app-header h1   { font-size: 1.85rem; }
-  .size-btn        { width: 40px; height: 34px; }
-  .tool-btn        { height: 46px; }
-  .piece-btn       { height: 66px; }
-  .tray-piece-btn  { height: 42px; }
-  .mod-btn         { width: 44px; height: 32px; }
-  .btn-solve,
-  .btn-clear       { height: 56px; }
+/* ── Side-by-side: wide screens, and landscape phones/tablets ──
+   The deck moves next to the board instead of under it, so the board can
+   use the full height of the window — the one layout that helps most in
+   landscape, where stacking leaves the board almost no room. */
+@media (min-width: 860px),
+       (orientation: landscape) and (max-height: 620px) and (min-width: 640px) {
+  .app {
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "strip  strip"
+      "stage  deck";
+    column-gap: 16px;
+  }
+  .app-header   { grid-area: header; }
+  .setup-strip  { grid-area: strip;  }
+  .stage        { grid-area: stage; padding: 12px 0 12px var(--edge); }
+  .deck         { grid-area: deck; padding: 12px var(--edge) 12px 0; justify-content: flex-start; }
+  /* The board no longer has to share width with anything, so let it use the
+     column's full height. */
+  .stage .board-area { height: 100%; }
 }
 
-/* ── Large tablets / small desktops (1024px and up) ─────────── */
-@media (min-width: 1024px) {
-  html { font-size: 17px; }
-  .app { max-width: 880px; }
+/* Landscape phones: the header/strip eat scarce height — trim them hard. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app-header  { --header-pad-top: 6px; padding-bottom: 5px; }
+  .app-header h1 { font-size: 1.15rem; }
+  .setup-strip { padding: 6px var(--edge) 5px; }
+  .stage       { padding: 8px var(--edge); }
+  :root {
+    --h-tool: 32px; --h-piece: 38px; --h-tray: 30px; --h-act: 38px;
+    --deck-gap: 6px;
+  }
+}
 
-  .app-header h1   { font-size: 2.1rem; }
-  .size-btn        { width: 46px; height: 38px; }
-  .tool-btn        { height: 50px; }
-  .piece-btn       { height: 76px; }
-  .tray-piece-btn  { height: 48px; }
-  .mod-btn         { width: 48px; height: 36px; }
-  .btn-solve,
-  .btn-clear       { height: 60px; }
+/* ── Short portrait screens: trim chrome so the board keeps room ─── */
+@media (max-height: 720px) and (orientation: portrait) {
+  .app-header  { --header-pad-top: 8px; padding-bottom: 6px; }
+  .setup-strip { padding: 6px var(--edge) 5px; }
+  .stage       { padding: 8px var(--edge); }
+  :root {
+    --h-tool: 34px; --h-piece: 40px; --h-tray: 32px; --h-act: 42px;
+    --deck-gap: 6px;
+  }
+}
+
+/* ============================================================
+   Responsive scaling — grow the whole UI on tablets & desktops
+   so it doesn't stay phone-sized on large screens.
+   ============================================================ */
+
+/* ── Tablets (640px and up) ─────────────────────────────────── */
+@media (min-width: 640px) and (min-height: 700px) {
+  html { font-size: 16px; }
+  .app { max-width: 760px; }
+
+  .app-header h1 { font-size: 1.7rem; }
+  :root {
+    --h-chip: 32px; --h-tool: 44px; --h-piece: 54px;
+    --h-tray: 42px; --h-act: 54px; --deck-gap: 10px;
+  }
+  .chip     { width: 38px; }
+  .mod-btn  { width: 38px; }
+  .colour-btn { width: 38px; }
+}
+
+/* ── Large tablets / desktops (1024px and up) ───────────────── */
+@media (min-width: 1024px) and (min-height: 700px) {
+  html { font-size: 17px; }
+
+  .app-header h1 { font-size: 1.9rem; }
+  :root {
+    --h-chip: 34px; --h-tool: 48px; --h-piece: 60px;
+    --h-tray: 46px; --h-act: 58px;
+  }
+  .chip     { width: 42px; }
+  .mod-btn  { width: 42px; }
+  .colour-btn { width: 42px; }
 }
 
 /* ============================================================
@@ -1010,9 +975,9 @@ body {
    guarded so touch devices don't get sticky hover states. */
 @media (hover: hover) and (pointer: fine) {
   .mode-tab:not(.active):hover,
-  .size-btn:not(.active):hover,
+  .chip:not(.active):hover,
   .tool-btn:not(.active):hover,
-  .mod-btn:not(.active):hover,
+  .mod-btn:not(.active):not(.tray-clear-btn):hover,
   .colour-btn:not(.active):hover {
     color: var(--text);
     border-color: var(--border-2);

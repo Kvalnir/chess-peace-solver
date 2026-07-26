@@ -1,13 +1,25 @@
 import { PIECE_SYMBOLS, PIECE_NAMES, ALL_KINDS } from "../solver/engine.js";
 
+/**
+ * Controls
+ * The top of the control deck: board size, click tool, and — only while the
+ * Place tool is active — the piece the tool puts down. Everything is a single
+ * unlabelled row so the board above keeps as much height as possible; the
+ * piece row is hidden for the other tools because it has no effect on them.
+ */
 export default function Controls({
   activeTool, onToolChange,
   selectedKind, selectedColour,
   onKindChange, onColourChange,
   mode,
+  sizes, boardCols, boardRows, onColsChange, onRowsChange,
 }) {
-  const isBlack = selectedColour === "B";
+  const isBlack    = selectedColour === "B";
   const showPreset = mode === "Presets";
+  const showPieces = activeTool === "place";
+  // Colour only matters for pieces placed by hand — the tray has its own
+  // per-colour rows — and only Two-Colour mode distinguishes the two sides.
+  const showColour = mode === "Two-Colour";
 
   // Build tool list — Preset tool only appears in Presets mode
   const tools = [
@@ -18,51 +30,79 @@ export default function Controls({
   ];
 
   return (
-    <div className="controls-panel">
-      {/* ── Tool bar ── */}
-      <div>
-        <div className="section-label">Click Tool</div>
-        <div className="tool-bar">
-          {tools.map(({ id, label }) => (
+    <>
+      {/* ── Board size ── */}
+      <div className="deck-row size-row">
+        <span className="mini-label">Cols</span>
+        <div className="chip-group" role="group" aria-label="Columns">
+          {sizes.map(n => (
             <button
-              key={id}
-              className={`tool-btn${activeTool === id ? " active" : ""}${id === "preset" ? " preset-tool" : ""}`}
-              onClick={() => onToolChange(id)}
-            >{label}</button>
+              key={n}
+              className={`chip${boardCols === n ? " active" : ""}`}
+              onClick={() => onColsChange(n)}
+              aria-label={`${n} columns`}
+              aria-pressed={boardCols === n}
+            >{n}</button>
+          ))}
+        </div>
+        <span className="mini-label rows">Rows</span>
+        <div className="chip-group" role="group" aria-label="Rows">
+          {sizes.map(n => (
+            <button
+              key={n}
+              className={`chip${boardRows === n ? " active" : ""}`}
+              onClick={() => onRowsChange(n)}
+              aria-label={`${n} rows`}
+              aria-pressed={boardRows === n}
+            >{n}</button>
           ))}
         </div>
       </div>
 
-      {/* ── Piece bar ── */}
-      <div className="piece-bar-section">
-        <div className="piece-bar-header">
-          <div className="section-label flush">Piece</div>
-          <div className="colour-toggle">
-            {["W", "B"].map(col => (
-              <button
-                key={col}
-                className={`colour-btn${selectedColour === col ? (col === "B" ? " active black" : " active") : ""}`}
-                onClick={() => onColourChange(col)}
-              >
-                {col === "W" ? "⬜ White" : "⬛ Black"}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="piece-bar">
+      {/* ── Click tool ── */}
+      <div className="deck-row tool-bar" role="group" aria-label="Click tool">
+        {tools.map(({ id, label }) => (
+          <button
+            key={id}
+            className={`tool-btn${activeTool === id ? " active" : ""}${id === "preset" ? " preset-tool" : ""}`}
+            onClick={() => onToolChange(id)}
+            aria-pressed={activeTool === id}
+          >{label}</button>
+        ))}
+      </div>
+
+      {/* ── Piece to place (Place tool only) ── */}
+      {showPieces && (
+        <div className="deck-row piece-bar" role="group" aria-label="Piece to place">
           {ALL_KINDS.map(kind => (
             <button
               key={kind}
               className={`piece-btn${selectedKind === kind ? (isBlack ? " active black" : " active") : ""}`}
               onClick={() => onKindChange(kind)}
+              title={PIECE_NAMES[kind]}
               aria-label={PIECE_NAMES[kind]}
+              aria-pressed={selectedKind === kind}
             >
               <span aria-hidden="true">{PIECE_SYMBOLS[selectedColour + kind]}</span>
-              <span className="piece-label">{kind}</span>
             </button>
           ))}
+          {showColour && (
+            <div className="colour-toggle" role="group" aria-label="Piece colour">
+              {["W", "B"].map(col => (
+                <button
+                  key={col}
+                  className={`colour-btn${selectedColour === col ? (col === "B" ? " active black" : " active") : ""}`}
+                  onClick={() => onColourChange(col)}
+                  aria-label={col === "W" ? "White" : "Black"}
+                  aria-pressed={selectedColour === col}
+                >
+                  {col === "W" ? "⬜" : "⬛"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

@@ -282,6 +282,9 @@ export default function App() {
     invalidate();
     // The Preset tool only exists in Presets mode — fall back to Block
     setActiveTool(t => (t === "preset" && newMode !== "Presets") ? "block" : t);
+    // The colour toggle only exists in Two-Colour mode — leaving it must not
+    // strand the selection on Black with no visible control to change it.
+    if (newMode !== "Two-Colour") setSelectedColour("W");
     // Auto-populate tray if switching into an auto-tray mode with empty tray
     if (AUTO_TRAY_MODES.includes(newMode)) {
       setStaged(prev => prev.length === 0 ? defaultStaged() : prev);
@@ -363,21 +366,12 @@ export default function App() {
         modes={MODES}
         active={mode}
         hint={MODE_HINTS[mode]}
+        result={resultMsg}
         onChange={handleModeChange}
       />
 
-      <div className="board-wrap">
-        <div className="board-size-row">
-          <span className="size-axis-label">Cols</span>
-          {SIZES.map(n => (
-            <button key={n} className={`size-btn${boardCols===n?" active":""}`} onClick={() => handleColsChange(n)}>{n}</button>
-          ))}
-          <span className="size-axis-label rows">Rows</span>
-          {SIZES.map(n => (
-            <button key={n} className={`size-btn${boardRows===n?" active":""}`} onClick={() => handleRowsChange(n)}>{n}</button>
-          ))}
-        </div>
-
+      {/* The board takes every pixel the deck below doesn't need. */}
+      <main className="stage">
         <div className="board-area" style={{ "--board-rows": boardRows }}>
           <Board
             boardRows={boardRows}
@@ -388,46 +382,42 @@ export default function App() {
             onCellAction={handleCellAction}
           />
         </div>
-      </div>
+      </main>
 
-      <Controls
-        activeTool={activeTool}
-        onToolChange={setActiveTool}
-        selectedKind={selectedKind}
-        selectedColour={selectedColour}
-        onKindChange={setSelectedKind}
-        onColourChange={setSelectedColour}
-        mode={mode}
-      />
+      <div className="deck">
+        <Controls
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          selectedKind={selectedKind}
+          selectedColour={selectedColour}
+          onKindChange={setSelectedKind}
+          onColourChange={setSelectedColour}
+          mode={mode}
+          sizes={SIZES}
+          boardCols={boardCols}
+          boardRows={boardRows}
+          onColsChange={handleColsChange}
+          onRowsChange={handleRowsChange}
+        />
 
-      <div className="divider" />
+        <StagingTray
+          stagedCounts={stagedCounts}
+          trayMode={trayMode}
+          onTrayModeChange={setTrayMode}
+          onPieceClick={handleTrayClick}
+          onClear={handleClearStaged}
+          showBlackRow={showBlackRow}
+        />
 
-      <StagingTray
-        stagedCounts={stagedCounts}
-        trayMode={trayMode}
-        onTrayModeChange={setTrayMode}
-        onPieceClick={handleTrayClick}
-        onClear={handleClearStaged}
-        showBlackRow={showBlackRow}
-      />
-
-      <div className="action-row">
-        <button className={`btn-solve${solving ? " solving" : ""}`} onClick={handleSolve}>
-          {solving
-            ? <><span className="spinner" aria-hidden="true" />Cancel</>
-            : "Solve Puzzle ♟"}
-        </button>
-        <button className="btn-clear" onClick={handleClear}>Reset</button>
-      </div>
-
-      {resultMsg && (
-        <div className={`result-banner ${resultMsg.kind}`} role="status">
-          <span>{resultMsg.text}</span>
-          {resultMsg.time != null && (
-            <span className="result-time">{resultMsg.time} ms</span>
-          )}
+        <div className="deck-row action-row">
+          <button className={`btn-solve${solving ? " solving" : ""}`} onClick={handleSolve}>
+            {solving
+              ? <><span className="spinner" aria-hidden="true" />Cancel</>
+              : "Solve Puzzle ♟"}
+          </button>
+          <button className="btn-clear" onClick={handleClear}>Reset</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
