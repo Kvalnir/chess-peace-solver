@@ -355,7 +355,12 @@ body {
   width: 100%;
   container-type: size;
   display: grid;
-  place-items: center;
+  /* Pinned to the bottom of the stage, not centred. The board is square, so
+     in a portrait window it can't use all the height the stage has; centring
+     split that slack into two thin bands and left the board looking adrift.
+     Bottom-aligned, the slack becomes one band under the status line and the
+     board sits against the deck, within reach of a thumb. */
+  place-items: end center;
 }
 
 /* ── Board grid ─────────────────────────────────────────────── */
@@ -533,7 +538,37 @@ body {
   color: var(--teal);
   border-color: var(--teal-border);
 }
-.chip:active { transform: scale(0.94); }
+.chip:active:not(:disabled) { transform: scale(0.94); }
+
+/* Undo / redo — the far end of the tool row, fenced off by a rule so they
+   don't read as two more tools. */
+.history-tools {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-left: 6px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border);
+}
+.icon-btn {
+  width: 32px;
+  height: var(--h-tool);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.icon-btn:active:not(:disabled) { transform: scale(0.94); }
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
 
 /* Click tool */
 .tool-btn {
@@ -898,6 +933,7 @@ body {
   .chip     { width: 38px; }
   .mod-btn  { width: 38px; }
   .colour-btn { width: 38px; }
+  .icon-btn { width: 40px; }
 }
 
 /* ── Large tablets / desktops (1024px and up) ───────────────── */
@@ -913,6 +949,7 @@ body {
   .chip     { width: 42px; }
   .mod-btn  { width: 42px; }
   .colour-btn { width: 42px; }
+  .icon-btn { width: 44px; }
 }
 
 /* ============================================================
@@ -948,8 +985,9 @@ body {
      opposite a vertically-centred board. */
   .deck         { grid-area: deck; padding: 12px var(--edge) 12px 0; justify-content: center; }
   /* The board no longer has to share width with anything, so let it use the
-     column's full height. */
-  .stage .board-area { height: 100%; }
+     column's full height — and centre it again, since here it sits opposite
+     a centred deck rather than above one. */
+  .stage .board-area { height: 100%; place-items: center; }
 }
 
 /* Landscape phones: the header/strip eat scarce height — trim them hard. */
@@ -983,10 +1021,15 @@ body {
    guarded so touch devices don't get sticky hover states. */
 @media (hover: hover) and (pointer: fine) {
   .mode-tab:not(.active):hover,
-  .chip:not(.active):hover,
+  .chip:not(.active):not(:disabled):hover,
   .tool-btn:not(.active):hover,
   .mod-btn:not(.active):not(.tray-clear-btn):hover,
   .colour-btn:not(.active):hover {
+    color: var(--text);
+    border-color: var(--border-2);
+    background: var(--panel-2);
+  }
+  .icon-btn:not(:disabled):hover {
     color: var(--text);
     border-color: var(--border-2);
     background: var(--panel-2);

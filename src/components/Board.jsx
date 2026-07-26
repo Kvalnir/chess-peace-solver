@@ -39,7 +39,8 @@ export default function Board({
     const action = getAction(r, c);
     if (!action) return;
     paintRef.current = { action, visited: new Set([`${r},${c}`]) };
-    onCellAction(r, c, action);
+    // First square of the stroke — the one that opens a new undo entry.
+    onCellAction(r, c, action, true);
   }, [getCellAt, getAction, onCellAction]);
 
   const handlePointerMove = useCallback((e) => {
@@ -50,7 +51,8 @@ export default function Board({
     const key = `${r},${c}`;
     if (paintRef.current.visited.has(key)) return;
     paintRef.current.visited.add(key);
-    onCellAction(r, c, paintRef.current.action);
+    // Continuation of the same stroke — folds into the entry above.
+    onCellAction(r, c, paintRef.current.action, false);
   }, [getCellAt, onCellAction]);
 
   const handlePointerUp = useCallback(() => { paintRef.current = null; }, []);

@@ -34,6 +34,10 @@ const getStoredTheme = () => {
 // Modes that auto-populate the staging tray with 1 of each piece
 const AUTO_TRAY_MODES = ["Classic", "Islands", "Presets"];
 
+// How many edits back you can go. Snapshots are small (a sparse cell map and
+// a short piece list), so this is generous without being worth trimming.
+const HISTORY_LIMIT = 50;
+
 const defaultStaged = () => ALL_KINDS.map(kind => ({ kind, colour: "W" }));
 
 export default function App() {
@@ -125,6 +129,66 @@ export default function App() {
     setResultMsg(null);
   }, [spawnWorker, setSolvingState]);
 
+  // ── Undo / redo ───────────────────────────────────────────────
+  // One entry per edit, each a snapshot of everything that defines the
+  // puzzle. Tool and colour selections are deliberately left out — they're
+  // how you're editing, not what you edited. Drag-painting a run of squares
+  // is a single entry: only the first cell of a stroke records history.
+  const [past,   setPast]   = useState([]);
+  const [future, setFuture] = useState([]);
+
+  const snapshot = useCallback(
+    () => ({ cells, staged, boardRows, boardCols, mode }),
+    [cells, staged, boardRows, boardCols, mode]
+  );
+
+  const applySnapshot = useCallback((s) => {
+    setCells(s.cells);
+    setStaged(s.staged);
+    setBoardRows(s.boardRows);
+    setBoardCols(s.boardCols);
+    setMode(s.mode);
+    // Restoring a mode has to hold the same invariants as switching to it:
+    // neither the Preset tool nor the Black colour has a visible control
+    // outside its own mode.
+    setActiveTool(t => (t === "preset" && s.mode !== "Presets") ? "block" : t);
+    if (s.mode !== "Two-Colour") setSelectedColour("W");
+  }, []);
+
+  // Call BEFORE mutating — it captures this render's state, which is the
+  // state the edit is about to replace.
+  const recordHistory = useCallback(() => {
+    setPast(p => [...p, snapshot()].slice(-HISTORY_LIMIT));
+    setFuture([]);
+  }, [snapshot]);
+
+  const undo = useCallback(() => {
+    if (past.length === 0) return;
+    setFuture(f => [snapshot(), ...f]);
+    setPast(p => p.slice(0, -1));
+    applySnapshot(past[past.length - 1]);
+    invalidate();
+  }, [past, snapshot, applySnapshot, invalidate]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    setPast(p => [...p, snapshot()]);
+    setFuture(f => f.slice(1));
+    applySnapshot(future[0]);
+    invalidate();
+  }, [future, snapshot, applySnapshot, invalidate]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z")      { e.preventDefault(); (e.shiftKey ? redo : undo)(); }
+      else if (key === "y") { e.preventDefault(); redo(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
   // ── Theme: apply choice, persist, keep PWA status-bar colour in sync ──
   useEffect(() => {
     const root = document.documentElement;
@@ -162,12 +226,14 @@ export default function App() {
   }, [invalidate]);
 
   const handleColsChange = useCallback((n) => {
+    recordHistory();
     setBoardCols(n); setBoardRows(n); clipCells(n, n);
-  }, [clipCells]);
+  }, [clipCells, recordHistory]);
 
   const handleRowsChange = useCallback((n) => {
+    recordHistory();
     setBoardRows(n); clipCells(n, boardCols);
-  }, [clipCells, boardCols]);
+  }, [clipCells, boardCols, recordHistory]);
 
   // ── Build puzzle for solver ───────────────────────────────────
   const buildPuzzle = useCallback(() => {
@@ -215,10 +281,14 @@ export default function App() {
   // ── Cell interaction ──────────────────────────────────────────
   // In auto-tray modes, placing a fixed piece removes it from staged,
   // and removing a fixed piece adds it back.
-  const handleCellAction = useCallback((r, c, action) => {
+  const handleCellAction = useCallback((r, c, action, startsStroke = true) => {
     const cellKey     = `${r},${c}`;
     const autoSync    = AUTO_TRAY_MODES.includes(mode);
     const currentCell = cells[cellKey]; // snapshot before update
+
+    // A drag across several squares is one edit, so only the square the
+    // stroke started on records history.
+    if (startsStroke) recordHistory();
 
     setCells(prev => {
       const next = { ...prev };
@@ -274,10 +344,11 @@ export default function App() {
     }
 
     invalidate();
-  }, [selectedKind, selectedColour, mode, cells, invalidate]);
+  }, [selectedKind, selectedColour, mode, cells, invalidate, recordHistory]);
 
   // ── Mode change ───────────────────────────────────────────────
   const handleModeChange = useCallback((newMode) => {
+    recordHistory();
     setMode(newMode);
     invalidate();
     // The Preset tool only exists in Presets mode — fall back to Block
@@ -289,10 +360,11 @@ export default function App() {
     if (AUTO_TRAY_MODES.includes(newMode)) {
       setStaged(prev => prev.length === 0 ? defaultStaged() : prev);
     }
-  }, [invalidate]);
+  }, [invalidate, recordHistory]);
 
   // ── Staging tray ──────────────────────────────────────────────
   const handleTrayClick = useCallback((kind, colour) => {
+    recordHistory();
     invalidate();
     setStaged(prev => {
       if (trayMode === "add") return [...prev, { kind, colour }];
@@ -301,13 +373,14 @@ export default function App() {
       const realIdx = prev.length - 1 - idx;
       return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
     });
-  }, [trayMode, invalidate]);
+  }, [trayMode, invalidate, recordHistory]);
 
   // Empty the staging tray without touching the board or board setup.
   const handleClearStaged = useCallback(() => {
+    recordHistory();
     setStaged([]);
     invalidate();
-  }, [invalidate]);
+  }, [invalidate, recordHistory]);
 
   const stagedCounts = useMemo(() => {
     const counts = {};
@@ -339,11 +412,12 @@ export default function App() {
 
   // ── Clear — resets to block tool and repopulates tray ─────────
   const handleClear = useCallback(() => {
+    recordHistory();
     invalidate(); // discards any in-flight solve
     setCells({});
     setStaged(AUTO_TRAY_MODES.includes(mode) ? defaultStaged() : []);
     setActiveTool("block"); // board setup comes first
-  }, [mode, invalidate]);
+  }, [mode, invalidate, recordHistory]);
 
   const showBlackRow = mode === "Two-Colour";
 
@@ -398,6 +472,10 @@ export default function App() {
           boardRows={boardRows}
           onColsChange={handleColsChange}
           onRowsChange={handleRowsChange}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={past.length > 0}
+          canRedo={future.length > 0}
         />
 
         <StagingTray

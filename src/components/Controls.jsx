@@ -13,6 +13,7 @@ export default function Controls({
   onKindChange, onColourChange,
   mode,
   sizes, boardCols, boardRows, onColsChange, onRowsChange,
+  onUndo, onRedo, canUndo, canRedo,
 }) {
   const isBlack    = selectedColour === "B";
   const showPreset = mode === "Presets";
@@ -69,6 +70,26 @@ export default function Controls({
             aria-pressed={activeTool === id}
           >{label}</button>
         ))}
+
+        {/* Undo/redo sit with the tools — they act on the board too. The
+            tool buttons are elastic, so this cluster can't overflow the row
+            the way it would in the fixed-width size row above. */}
+        <div className="history-tools">
+          <button
+            className="icon-btn"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo last edit"
+          >↶</button>
+          <button
+            className="icon-btn"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo last undone edit"
+          >↷</button>
+        </div>
       </div>
 
       {/* ── Piece to place (Place tool only) ── */}
