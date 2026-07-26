@@ -5,8 +5,8 @@
 
    Layout: header → mode strip → board (takes all leftover height) →
    control deck. Every control below the board is a single unlabelled row
-   so the board keeps as much of the viewport as possible; on wide or
-   landscape screens the deck moves beside the board instead.
+   so the board keeps as much of the viewport as possible; in a landscape
+   window the deck moves beside the board instead.
    ============================================================ */
 
 /* ── Reset & base ──────────────────────────────────────────── */
@@ -881,19 +881,59 @@ body {
 }
 
 /* ============================================================
+   Responsive scaling — grow the whole UI on tablets & desktops
+   so it doesn't stay phone-sized on large screens.
+   ============================================================ */
+
+/* ── Tablets (640px and up) ─────────────────────────────────── */
+@media (min-width: 640px) and (min-height: 700px) {
+  html { font-size: 16px; }
+  .app { max-width: 760px; }
+
+  .app-header h1 { font-size: 1.7rem; }
+  :root {
+    --h-chip: 32px; --h-tool: 44px; --h-piece: 54px;
+    --h-tray: 42px; --h-act: 54px; --deck-gap: 10px;
+  }
+  .chip     { width: 38px; }
+  .mod-btn  { width: 38px; }
+  .colour-btn { width: 38px; }
+}
+
+/* ── Large tablets / desktops (1024px and up) ───────────────── */
+@media (min-width: 1024px) and (min-height: 700px) {
+  html { font-size: 17px; }
+  .app { max-width: 880px; }
+
+  .app-header h1 { font-size: 1.9rem; }
+  :root {
+    --h-chip: 34px; --h-tool: 48px; --h-piece: 60px;
+    --h-tray: 46px; --h-act: 58px;
+  }
+  .chip     { width: 42px; }
+  .mod-btn  { width: 42px; }
+  .colour-btn { width: 42px; }
+}
+
+/* ============================================================
    Layout variants
    ============================================================ */
 
-/* ── Side-by-side: wide screens, and landscape phones/tablets ──
-   The deck moves next to the board instead of under it, so the board can
-   use the full height of the window — the one layout that helps most in
-   landscape, where stacking leaves the board almost no room. */
-@media (min-width: 860px),
+/* ── Side-by-side: landscape windows only ──────────────────────
+   The deck moves next to the board so the board can use the window's full
+   height. This only pays off when the window is wider than it is tall: the
+   board is square, so in a portrait window the deck's column is width the
+   board can't spare, and the height it frees up goes unused. Both branches
+   below are therefore gated on landscape — the first covers desktops and
+   tablets, the second short landscape phones. */
+@media (min-width: 860px) and (orientation: landscape),
        (orientation: landscape) and (max-height: 620px) and (min-width: 640px) {
   .app {
-    max-width: 1200px;
+    max-width: 1400px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    /* The deck takes a share of the width rather than a fixed slab, so a
+       narrow landscape phone doesn't hand it a third of the screen. */
+    grid-template-columns: minmax(0, 1fr) clamp(290px, 30%, 400px);
     grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       "header header"
@@ -904,7 +944,9 @@ body {
   .app-header   { grid-area: header; }
   .setup-strip  { grid-area: strip;  }
   .stage        { grid-area: stage; padding: 12px 0 12px var(--edge); }
-  .deck         { grid-area: deck; padding: 12px var(--edge) 12px 0; justify-content: flex-start; }
+  /* Centred, so a tall column doesn't leave the deck stranded at the top
+     opposite a vertically-centred board. */
+  .deck         { grid-area: deck; padding: 12px var(--edge) 12px 0; justify-content: center; }
   /* The board no longer has to share width with anything, so let it use the
      column's full height. */
   .stage .board-area { height: 100%; }
@@ -931,40 +973,6 @@ body {
     --h-tool: 34px; --h-piece: 40px; --h-tray: 32px; --h-act: 42px;
     --deck-gap: 6px;
   }
-}
-
-/* ============================================================
-   Responsive scaling — grow the whole UI on tablets & desktops
-   so it doesn't stay phone-sized on large screens.
-   ============================================================ */
-
-/* ── Tablets (640px and up) ─────────────────────────────────── */
-@media (min-width: 640px) and (min-height: 700px) {
-  html { font-size: 16px; }
-  .app { max-width: 760px; }
-
-  .app-header h1 { font-size: 1.7rem; }
-  :root {
-    --h-chip: 32px; --h-tool: 44px; --h-piece: 54px;
-    --h-tray: 42px; --h-act: 54px; --deck-gap: 10px;
-  }
-  .chip     { width: 38px; }
-  .mod-btn  { width: 38px; }
-  .colour-btn { width: 38px; }
-}
-
-/* ── Large tablets / desktops (1024px and up) ───────────────── */
-@media (min-width: 1024px) and (min-height: 700px) {
-  html { font-size: 17px; }
-
-  .app-header h1 { font-size: 1.9rem; }
-  :root {
-    --h-chip: 34px; --h-tool: 48px; --h-piece: 60px;
-    --h-tray: 46px; --h-act: 58px;
-  }
-  .chip     { width: 42px; }
-  .mod-btn  { width: 42px; }
-  .colour-btn { width: 42px; }
 }
 
 /* ============================================================
