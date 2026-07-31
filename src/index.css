@@ -359,7 +359,8 @@ body {
      in a portrait window it can't use all the height the stage has; centring
      split that slack into two thin bands and left the board looking adrift.
      Bottom-aligned, the slack becomes one band under the status line and the
-     board sits against the deck, within reach of a thumb. */
+     board sits against the deck, within reach of a thumb.
+     Tablets and up centre it again — see the responsive section. */
   place-items: end center;
 }
 
@@ -934,6 +935,13 @@ body {
   .mod-btn  { width: 38px; }
   .colour-btn { width: 38px; }
   .icon-btn { width: 40px; }
+
+  /* Centre the board in the stage instead of pinning it to the deck. The
+     board's width is capped by .app's max-width, so on a tall tablet it
+     can't grow into the leftover height — bottom-pinned, all of that slack
+     piles up as one dead band above the board. There's no thumb-reach
+     argument at this size, so split the slack evenly instead. */
+  .board-area { place-items: center; }
 }
 
 /* ── Large tablets / desktops (1024px and up) ───────────────── */
