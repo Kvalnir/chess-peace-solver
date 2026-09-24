@@ -114,10 +114,11 @@ export default function Controls({
                   key={col}
                   className={`colour-btn${selectedColour === col ? (col === "B" ? " active black" : " active") : ""}`}
                   onClick={() => onColourChange(col)}
+                  title={col === "W" ? "White" : "Black"}
                   aria-label={col === "W" ? "White" : "Black"}
                   aria-pressed={selectedColour === col}
                 >
-                  {col === "W" ? "⬜" : "⬛"}
+                  <span className={`swatch${col === "B" ? " filled" : ""}`} aria-hidden="true" />
                 </button>
               ))}
             </div>

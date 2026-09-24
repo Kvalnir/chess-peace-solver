@@ -424,7 +424,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>♟ Chess Peace</h1>
+        <h1>{PIECE_SYMBOLS.BP} Chess Peace</h1>
         <span className="tagline">Solver</span>
         <button
           className="theme-toggle"
@@ -491,7 +491,7 @@ export default function App() {
           <button className={`btn-solve${solving ? " solving" : ""}`} onClick={handleSolve}>
             {solving
               ? <><span className="spinner" aria-hidden="true" />Cancel</>
-              : "Solve Puzzle ♟"}
+              : <>Solve Puzzle <span aria-hidden="true">{PIECE_SYMBOLS.BP}</span></>}
           </button>
           <button className="btn-clear" onClick={handleClear}>Reset</button>
         </div>

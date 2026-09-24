@@ -46,8 +46,6 @@
   --violet:      light-dark(#6d28d9,                #c084fc);
   --violet-dim:  light-dark(rgba(109,40,217,0.12),  rgba(192,132,252,0.15));
   --violet-glow: light-dark(rgba(109,40,217,0.25),  rgba(192,132,252,0.35));
-  --sky:       light-dark(#0369a1,                  #38bdf8);
-  --sky-dim:   light-dark(rgba(3,105,161,0.12),     rgba(56,189,248,0.15));
   --red:       light-dark(#dc2626,                  #f85149);
   --red-dim:   light-dark(rgba(220,38,38,0.10),     rgba(248,81,73,0.15));
   --green:     light-dark(#15803d,                  #3fb950);
@@ -56,7 +54,6 @@
   /* Tinted borders / glows that must flip with the theme (replace inline rgba) */
   --teal-border:   light-dark(rgba(15,118,110,0.45),  rgba(45,212,191,0.4));
   --teal-soft:     light-dark(rgba(15,118,110,0.10),  rgba(45,212,191,0.08));
-  --sky-border:    light-dark(rgba(3,105,161,0.45),   rgba(56,189,248,0.4));
   --amber-border:  light-dark(rgba(180,83,9,0.45),    rgba(251,191,36,0.4));
   --amber-line:    light-dark(rgba(180,83,9,0.6),     rgba(251,191,36,0.6));
   --amber-soft:    light-dark(rgba(180,83,9,0.18),    rgba(251,191,36,0.2));
@@ -245,10 +242,6 @@ body {
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
   user-select: none;
-}
-.theme-toggle:hover {
-  border-color: var(--teal-border);
-  background: var(--teal-dim);
 }
 .theme-toggle:active { transform: scale(0.92); }
 
@@ -548,7 +541,6 @@ body {
   gap: 4px;
   flex-shrink: 0;
   padding-left: 6px;
-  margin-left: 2px;
   border-left: 1px solid var(--border);
 }
 .icon-btn {
@@ -567,7 +559,7 @@ body {
 }
 .icon-btn:active:not(:disabled) { transform: scale(0.94); }
 .icon-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -621,9 +613,11 @@ body {
   user-select: none;
   position: relative;
 }
+/* The selected glyph takes the colour it will have on the board */
 .piece-btn.active {
   border-color: var(--amber);
   background: var(--amber-dim);
+  color: var(--amber);
   box-shadow: 0 0 12px var(--amber-soft);
 }
 .piece-btn:active { transform: scale(0.93); }
@@ -642,18 +636,28 @@ body {
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--sub);
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
 }
 .colour-btn.active {
-  background: var(--sky-dim);
-  color: var(--sky);
-  border-color: var(--sky-border);
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: var(--amber-border);
 }
+
+/* Hollow = White, filled = Black — the same convention as the outline and
+   solid chess glyphs. Drawn in currentColor so it tints with the button. */
+.swatch {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+}
+.swatch.filled { background: currentColor; }
 
 /* ── Staging tray ────────────────────────────────────────────── */
 /* A single row of chips (two in Two-Colour mode) with the add/remove/clear
@@ -686,7 +690,7 @@ body {
   width: 10px;
   font-size: 0.62rem;
   font-weight: 700;
-  color: var(--sub);
+  color: var(--amber);
   flex-shrink: 0;
 }
 
@@ -723,7 +727,7 @@ body {
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
-  padding-left: 2px;
+  padding-left: 6px;
   border-left: 1px solid var(--border);
 }
 
@@ -749,11 +753,6 @@ body {
 .mod-btn:active:not(:disabled) { transform: scale(0.94); }
 
 .tray-clear-btn { font-size: 0.8rem; }
-.tray-clear-btn:hover:not(:disabled) {
-  color: var(--red);
-  border-color: var(--red-border);
-  background: var(--red-dim);
-}
 .tray-clear-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -787,10 +786,6 @@ body {
   inset: 0;
   background: linear-gradient(135deg, transparent 40%, var(--teal-soft));
 }
-.btn-solve:hover {
-  background: var(--teal-glow);
-  box-shadow: 0 0 20px var(--teal-glow);
-}
 .btn-solve:active { transform: scale(0.97); }
 
 /* While a solve runs the button becomes Cancel */
@@ -798,10 +793,6 @@ body {
   border-color: var(--red-border);
   background: var(--red-dim);
   color: var(--red);
-}
-.btn-solve.solving:hover {
-  background: var(--red-dim);
-  box-shadow: none;
 }
 
 .spinner {
@@ -835,7 +826,6 @@ body {
   user-select: none;
   flex-shrink: 0;
 }
-.btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
 .btn-clear:active { transform: scale(0.96); }
 
 /* ============================================================
@@ -864,9 +854,10 @@ body {
 
 /* ── Piece bar — Black selected piece ───────────────────────── */
 .piece-btn.active.black {
-  border-color: var(--violet) !important;
-  background: var(--violet-dim) !important;
-  box-shadow: 0 0 12px var(--violet-glow) !important;
+  border-color: var(--violet);
+  background: var(--violet-dim);
+  color: var(--violet);
+  box-shadow: 0 0 12px var(--violet-glow);
 }
 
 /* ── Colour toggle — Black active ───────────────────────────── */
@@ -1026,8 +1017,14 @@ body {
    ============================================================ */
 
 /* Hover feedback on devices that actually hover (mouse/trackpad) —
-   guarded so touch devices don't get sticky hover states. */
+   guarded so touch devices don't get sticky hover states. Every :hover rule
+   belongs in here: iOS keeps :hover on the last button tapped, which left
+   Reset glowing red and Solve glowing teal after a tap. */
 @media (hover: hover) and (pointer: fine) {
+  .theme-toggle:hover {
+    border-color: var(--teal-border);
+    background: var(--teal-dim);
+  }
   .mode-tab:not(.active):hover,
   .chip:not(.active):not(:disabled):hover,
   .tool-btn:not(.active):hover,
@@ -1049,6 +1046,20 @@ body {
   .tray-piece-btn:not(.has-pieces):hover {
     border-color: var(--border);
     background: var(--panel-2);
+  }
+  .tray-clear-btn:hover:not(:disabled),
+  .btn-clear:hover {
+    color: var(--red);
+    border-color: var(--red-border);
+    background: var(--red-dim);
+  }
+  .btn-solve:hover {
+    background: var(--teal-glow);
+    box-shadow: 0 0 20px var(--teal-glow);
+  }
+  .btn-solve.solving:hover {
+    background: var(--red-dim);
+    box-shadow: none;
   }
 }
 

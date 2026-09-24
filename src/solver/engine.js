@@ -7,9 +7,13 @@ export const PIECE_NAMES = {
   B: "Bishop", N: "Knight", P: "Pawn",
 };
 
+// ♟ is the only chess glyph that is also an emoji, and iOS, Android and
+// Windows all draw it as one by default: a full-colour picture that ignores
+// CSS `color` and doesn't match the other five. U+FE0E asks for the plain
+// text glyph instead.
 export const PIECE_SYMBOLS = {
   WK: "♔", WQ: "♕", WR: "♖", WB: "♗", WN: "♘", WP: "♙",
-  BK: "♚", BQ: "♛", BR: "♜", BB: "♝", BN: "♞", BP: "♟",
+  BK: "♚", BQ: "♛", BR: "♜", BB: "♝", BN: "♞", BP: "♟\uFE0E",
 };
 
 export const PIECE_WEIGHTS = { Q: 6, R: 5, B: 4, K: 3, N: 2, P: 1 };

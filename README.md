@@ -50,7 +50,7 @@ A mobile-first Progressive Web App (PWA) for solving [Chess Peace](https://chess
 
 **Drag-paint:** Hold and drag across squares to apply the same action to multiple squares at once.
 
-**Piece picker:** The row of piece buttons appears while the **Place** tool is active — it only affects what that tool puts down. In Two-Colour mode a ⬜/⬛ toggle appears beside it.
+**Piece picker:** The row of piece buttons appears while the **Place** tool is active — it only affects what that tool puts down. The selected piece is tinted the colour it will have on the board. In Two-Colour mode a White/Black toggle (hollow/filled square) appears beside it.
 
 **Undo / redo:** The ↶ and ↷ buttons at the end of the tool row step through your edits — board squares, tray changes, board size, mode switches and Reset. A drag-painted run of squares undoes as one step. On a keyboard: `Ctrl`/`Cmd` + `Z` to undo, `Ctrl` + `Shift` + `Z` or `Ctrl` + `Y` to redo. History holds the last 50 edits.
 
