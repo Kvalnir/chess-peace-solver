@@ -94,7 +94,10 @@ Clears the board and restores defaults — tool resets to **Block**, staging tra
 
 ```
 chess-peace-solver/
-├── .github/workflows/deploy.yml   # GitHub Actions — auto build & deploy
+├── .github/
+│   ├── workflows/deploy.yml       # GitHub Actions — auto build & deploy
+│   ├── workflows/ci.yml           # Vulnerability audit + build check (also weekly)
+│   └── dependabot.yml             # Monthly dependency-update PRs
 ├── public/
 │   ├── icons/                     # PWA icons (192px, 512px, apple-touch)
 │   └── generate-icons.html        # Open in browser to generate PNG icons
@@ -112,7 +115,8 @@ chess-peace-solver/
 │   └── index.css                  # Layout, light + dark themes (light-dark() tokens)
 ├── index.html                     # iOS PWA meta tags
 ├── vite.config.js                 # Vite + PWA plugin config
-└── package.json
+├── package.json
+└── package-lock.json              # Exact dependency versions (npm ci installs these)
 ```
 
 ---
@@ -133,10 +137,10 @@ chess-peace-solver/
 
 ## Local Development
 
-Requires [Node.js](https://nodejs.org/) 18 or newer (CI builds on Node 24).
+Requires [Node.js](https://nodejs.org/) 20.19 or newer (Vite 8's minimum; CI builds on Node 24).
 
 ```bash
-npm install      # install dependencies
+npm ci           # install the exact versions recorded in package-lock.json
 npm run dev      # start the Vite dev server with hot reload
 npm run build    # produce the production bundle in dist/
 npm run preview  # serve the built bundle locally to verify it
@@ -152,6 +156,12 @@ To update the live app:
 1. Commit a change to `main` (edit locally and push, or edit a file directly on GitHub via the pencil icon)
 2. Wait ~60 seconds for the Actions workflow to build and deploy
 3. The live URL updates automatically
+
+### Dependency security
+
+`package-lock.json` pins every package to an exact version, and both workflows install from it with `npm ci`, so the live site ships exactly the versions that were checked. The CI workflow (`.github/workflows/ci.yml`) runs `npm audit` and a test build on every push and pull request, and again every Monday, so a newly published vulnerability turns the check red even when nothing has changed. Dependabot opens monthly PRs to bump dependencies; CI checks each one, so merge them when green.
+
+If you edit `package.json` by hand, run `npm install` once to update `package-lock.json`, and commit both files together.
 
 ---
 

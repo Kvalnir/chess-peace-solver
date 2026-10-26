@@ -1,0 +1,27 @@
+# Dependabot keeps dependencies current and surfaces security fixes as PRs.
+# package-lock.json pins every package to an exact version, so a fix released
+# after the lockfile was written won't arrive on its own. Dependabot opens a
+# PR to bump it, and CI (.github/workflows/ci.yml) audits and builds that PR
+# so you can "merge when green".
+version: 2
+updates:
+  # npm packages: package.json and package-lock.json.
+  # Monthly to keep PR noise down on a personal project; CI's weekly npm audit
+  # still catches a fresh advisory between these runs and turns the check red.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      # React and its DOM renderer must move together.
+      react:
+        patterns: ["react", "react-dom"]
+      # Vite and its plugins share a major version cycle.
+      vite:
+        patterns: ["vite", "@vitejs/*", "vite-plugin-*"]
+
+  # The actions used by the workflows themselves (checkout, setup-node, ...).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
