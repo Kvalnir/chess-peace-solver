@@ -1,0 +1,5 @@
+# Installed packages: npm ci rebuilds these from package-lock.json.
+node_modules/
+
+# Vite's build output: CI builds it fresh and deploys it to GitHub Pages.
+dist/

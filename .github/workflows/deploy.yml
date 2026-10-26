@@ -27,8 +27,10 @@ jobs:
         with:
           node-version: 24
 
+      # npm ci installs exactly what package-lock.json records, so the site
+      # ships the same versions CI audited (.github/workflows/ci.yml).
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build production bundle
         run: npm run build
